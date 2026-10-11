@@ -2,8 +2,8 @@ module.exports = {
   apps: [
     {
       name: "ptites-crea-claire",
-      script: "npm",
-      args: "start",
+      script: "node_modules/next/dist/bin/next",
+      args: "start -p 3015",
       cwd: "/var/www/ptites-crea-claire",
       instances: 1,
       autorestart: true,
