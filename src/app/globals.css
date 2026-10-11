@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-script: "Alex Brush", cursive;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  /* Palette officielle "Les P'tites Créa de Claire" */
+  --color-cream: #FDFBF7;
+  --color-cream-warm: #FAF6F0;
+  --color-cream-dark: #F3ECE1;
+  --color-rose-light: #F8E8EA;
+  --color-rose-powder: #E8B4B8;
+  --color-rose-old: #C87D88;
+  --color-plum: #6E2D4A;
+  --color-plum-dark: #4E1B32;
+  --color-sage: #87A287;
+  --color-eucalyptus: #4E6B5D;
+  --color-gold: #D4AF37;
+  --color-gold-soft: #C5A059;
+  --color-dark: #2D2327;
+  --color-muted: #695D62;
+}
+
+:root {
+  --background: #FDFBF7;
+  --foreground: #2D2327;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Polices spécialisées */
+.font-script {
+  font-family: var(--font-script);
+}
+
+.font-serif {
+  font-family: var(--font-serif);
+}
+
+.font-sans {
+  font-family: var(--font-sans);
+}
+
+/* Animations et transitions douces */
+.transition-smooth {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Effets de cartes bijoux élégantes */
+.artisan-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(232, 180, 184, 0.25);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px -2px rgba(110, 45, 74, 0.05);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.artisan-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px -4px rgba(110, 45, 74, 0.12);
+  border-color: rgba(212, 175, 55, 0.45);
+}
+
+/* Badges artisanaux */
+.badge-artisan {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  background-color: #F8E8EA;
+  color: #6E2D4A;
+  border: 1px solid rgba(232, 180, 184, 0.4);
+}
+
+.badge-gold {
+  background-color: #FAF4E5;
+  color: #8C6D1F;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+}
+
+/* Barre de défilement discrète */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #FAF6F0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E8B4B8;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #C87D88;
+}
+
+/* Optimisation tactile pour écrans mobiles et tablettes */
+button,
+a,
+input,
+select,
+textarea,
+label,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Cibles tactiles confortables sur mobile */
+@media (max-width: 768px) {
+  button,
+  [role="button"],
+  a.touch-target {
+    min-height: 40px;
+  }
+}
+
