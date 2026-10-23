@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH !== undefined ? process.env.NEXT_PUBLIC_BASE_PATH : '/lpc',
   turbopack: {
     rules: {
       "*.css": {
@@ -18,6 +18,8 @@ const nextConfig: NextConfig = {
     '127.0.0.1',
     '127.0.0.1:3000',
     '*.loca.lt',
+    'virtuose-social.com',
+    '*.virtuose-social.com',
   ],
 };
 

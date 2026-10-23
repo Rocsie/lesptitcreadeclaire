@@ -44,6 +44,8 @@ export const metadata: Metadata = {
   },
 };
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH !== undefined ? process.env.NEXT_PUBLIC_BASE_PATH : '/lpc';
+
 export default function RootLayout({
   children,
 }: {
@@ -52,7 +54,26 @@ export default function RootLayout({
   return (
     <html lang="fr" className="h-full scroll-smooth" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href={`${basePath}/favicon.ico`} sizes="any" />
+        {basePath && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  var b = ${JSON.stringify(basePath)};
+                  if (!b) return;
+                  var origFetch = window.fetch;
+                  window.fetch = function(url, opts) {
+                    if (typeof url === 'string') {
+                      if (url.startsWith('/api/')) url = b + url;
+                    }
+                    return origFetch.call(this, url, opts);
+                  };
+                })();
+              `
+            }}
+          />
+        )}
       </head>
       <body className="min-h-full flex flex-col bg-cream text-dark antialiased" suppressHydrationWarning>
         <AuthProvider>
