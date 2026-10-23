@@ -21,7 +21,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, subtotal, appliedPromo, clearCart } = useCart();
+  const { items, subtotal, appliedPromo, clearCart, isLoaded } = useCart();
   const { user } = useAuth();
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
@@ -67,12 +67,12 @@ export default function CheckoutPage() {
     }
   }, [shippingMethod, subtotal, appliedPromo]);
 
-  // Si le panier est vide et pas encore à l'étape confirmation, rediriger
+  // Si le panier est vide et pas encore à l'étape confirmation, rediriger uniquement une fois le panier chargé
   useEffect(() => {
-    if (items.length === 0 && step !== 4) {
+    if (isLoaded && items.length === 0 && step !== 4) {
       router.push('/boutique');
     }
-  }, [items, step, router]);
+  }, [isLoaded, items, step, router]);
 
   const discountAmount = appliedPromo?.discountAmount || 0;
   const total = Math.max(0, subtotal - discountAmount + shippingCost);
@@ -91,9 +91,11 @@ export default function CheckoutPage() {
         shippingAddress: {
           name: `${formData.firstName} ${formData.lastName}`,
           address1: shippingMethod === 'pickup' ? "Retrait en boutique L'Atelier" : formData.address1,
+          address2: shippingMethod === 'pickup' ? "" : (formData.address2 || ""),
           postalCode: shippingMethod === 'pickup' ? "11210" : formData.postalCode,
           city: shippingMethod === 'pickup' ? "Port-la-Nouvelle" : formData.city,
-          country: formData.country,
+          country: formData.country || 'France',
+          phone: formData.phone || '',
         },
         items: items.map((item) => ({
           productId: item.productId,
@@ -227,6 +229,11 @@ export default function CheckoutPage() {
                 ? "Retrait gratuit à la boutique L'Atelier (Port-la-Nouvelle)"
                 : 'Expédition Colissimo à domicile'}
             </p>
+            {shippingMethod === 'standard_delivery' && formData.address1 && (
+              <p className="pt-1.5 border-t border-rose-powder/20 text-[11px] text-muted">
+                <strong>Adresse d&apos;expédition :</strong> {formData.firstName} {formData.lastName} • {formData.address1}{formData.address2 ? `, ${formData.address2}` : ''}, {formData.postalCode} {formData.city} ({formData.country})
+              </p>
+            )}
           </div>
 
           <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center">
@@ -318,7 +325,9 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-dark block mb-1">Téléphone</label>
+                    <label className="text-xs font-semibold text-dark block mb-1">
+                      Téléphone portable <span className="text-muted font-normal">(Conseillé pour SMS Colissimo)</span>
+                    </label>
                     <input
                       type="tel"
                       value={formData.phone}
@@ -412,11 +421,19 @@ export default function CheckoutPage() {
 
 
                 {/* Adresse si livraison standard */}
+                {/* Adresse si livraison standard */}
                 {shippingMethod === 'standard_delivery' && (
                   <div className="space-y-3 pt-4 border-t border-rose-powder/20">
-                    <h3 className="text-xs font-bold uppercase text-dark">Adresse de livraison</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-bold uppercase text-dark flex items-center gap-1.5">
+                        <Truck className="w-3.5 h-3.5 text-plum" />
+                        <span>Adresse de livraison Colissimo</span>
+                      </h3>
+                      <span className="text-[10px] text-muted">France Métropolitaine</span>
+                    </div>
+
                     <div>
-                      <label className="text-xs font-semibold text-dark block mb-1">Adresse postale *</label>
+                      <label className="text-xs font-semibold text-dark block mb-1">Adresse postale (numéro et voie) *</label>
                       <input
                         type="text"
                         required
@@ -426,6 +443,18 @@ export default function CheckoutPage() {
                         className="w-full px-3.5 py-2 text-xs rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum"
                       />
                     </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-dark block mb-1">Complément d&apos;adresse (Optionnel)</label>
+                      <input
+                        type="text"
+                        value={formData.address2}
+                        onChange={(e) => setFormData({ ...formData, address2: e.target.value })}
+                        placeholder="Bâtiment B, Appartement 4, Interphone..."
+                        className="w-full px-3.5 py-2 text-xs rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum"
+                      />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs font-semibold text-dark block mb-1">Code postal *</label>
@@ -464,9 +493,11 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (shippingMethod === 'standard_delivery' && (!formData.address1 || !formData.city)) {
-                        alert('Veuillez renseigner votre adresse de livraison.');
-                        return;
+                      if (shippingMethod === 'standard_delivery') {
+                        if (!formData.address1.trim() || !formData.postalCode.trim() || !formData.city.trim()) {
+                          alert('Veuillez renseigner votre adresse, code postal et ville pour la livraison Colissimo.');
+                          return;
+                        }
                       }
                       setStep(3);
                     }}

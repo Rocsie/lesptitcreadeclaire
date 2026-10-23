@@ -114,9 +114,11 @@ export interface Order {
   shippingAddress: {
     name?: string;
     address1?: string;
+    address2?: string;
     postalCode?: string;
     city?: string;
     country?: string;
+    phone?: string;
   };
   subtotal: number;
   discountAmount: number;
@@ -755,13 +757,15 @@ export const store = {
     return newOrder;
   },
 
-  async updateOrderStatus(orderId: string, newStatus: Order['status'], adminNotes?: string) {
+  async updateOrderStatus(orderId: string, newStatus?: Order['status'], adminNotes?: string) {
     const s = getInitialStore();
     const order = s.orders.find(o => o.id === orderId);
     if (!order) return null;
 
     const previousStatus = order.status;
-    order.status = newStatus;
+    if (newStatus) {
+      order.status = newStatus;
+    }
     if (adminNotes !== undefined) order.adminNotes = adminNotes;
 
     // Si la commande est annulée ou remboursée, réintégrer le stock

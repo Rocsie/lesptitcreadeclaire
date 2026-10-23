@@ -96,7 +96,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full min-h-[48px] py-3.5 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs uppercase tracking-wider active:scale-98 transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <span>{loading ? 'Connexion...' : 'Se connecter'}</span>
             <ArrowRight className="w-4 h-4" />
@@ -112,14 +112,14 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={fillDemoAdmin}
-              className="p-2 rounded-xl bg-plum/10 hover:bg-plum/20 text-plum font-semibold text-[11px] transition-colors"
+              className="min-h-[44px] p-2 rounded-xl bg-plum/10 hover:bg-plum/20 text-plum font-semibold text-xs active:scale-95 transition-all flex items-center justify-center"
             >
               Claire (Admin)
             </button>
             <button
               type="button"
               onClick={fillDemoClient}
-              className="p-2 rounded-xl bg-rose-powder/30 hover:bg-rose-powder/50 text-dark font-semibold text-[11px] transition-colors"
+              className="min-h-[44px] p-2 rounded-xl bg-rose-powder/30 hover:bg-rose-powder/50 text-dark font-semibold text-xs active:scale-95 transition-all flex items-center justify-center"
             >
               Sophie (Cliente)
             </button>

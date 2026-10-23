@@ -349,19 +349,25 @@ export default function AdminProductsPage() {
                       {p.status}
                     </span>
                   </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button
-                      onClick={() => openEditModal(p)}
-                      className="p-1.5 rounded-lg text-gray-600 hover:text-plum hover:bg-gray-100"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProduct(p.id)}
-                      className="p-1.5 rounded-lg text-gray-600 hover:text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(p)}
+                        className="w-8 h-8 rounded-lg text-gray-600 hover:text-plum hover:bg-gray-100 active:bg-gray-200 flex items-center justify-center transition-all"
+                        aria-label="Modifier"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProduct(p.id)}
+                        className="w-8 h-8 rounded-lg text-gray-600 hover:text-red-600 hover:bg-red-50 active:bg-red-100 flex items-center justify-center transition-all"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -372,19 +378,24 @@ export default function AdminProductsPage() {
 
       {/* Modal Créer / Modifier */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-              <h2 className="text-xl font-bold font-serif text-gray-900">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl max-w-2xl w-full p-4 sm:p-7 space-y-5 shadow-2xl max-h-[92dvh] overflow-y-auto animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3.5 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <h2 className="text-lg sm:text-xl font-bold font-serif text-gray-900">
                 {editingProduct ? 'Modifier la création' : 'Ajouter une nouvelle création'}
               </h2>
-              <button onClick={() => setIsModalOpen(false)}>
-                <X className="w-5 h-5 text-gray-400" />
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 active:scale-95 transition-all"
+                aria-label="Fermer"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="font-semibold block mb-1">Nom du bijou *</label>
                   <input
@@ -392,7 +403,7 @@ export default function AdminProductsPage() {
                     required
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
+                    className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
                   />
                 </div>
                 <div>
@@ -402,12 +413,12 @@ export default function AdminProductsPage() {
                     required
                     value={form.reference}
                     onChange={(e) => setForm({ ...form, reference: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 font-mono"
+                    className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 font-mono focus:outline-none focus:border-plum"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div>
                   <label className="font-semibold block mb-1">Prix (€) *</label>
                   <input
@@ -416,7 +427,7 @@ export default function AdminProductsPage() {
                     required
                     value={form.price}
                     onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200 font-bold"
+                    className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 font-bold focus:outline-none focus:border-plum"
                   />
                 </div>
                 <div>
@@ -426,7 +437,7 @@ export default function AdminProductsPage() {
                     step="0.5"
                     value={form.compareAtPrice}
                     onChange={(e) => setForm({ ...form, compareAtPrice: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
+                    className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
                   />
                 </div>
                 <div>
@@ -436,7 +447,7 @@ export default function AdminProductsPage() {
                     required
                     value={form.stock}
                     onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl border border-gray-200"
+                    className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
                   />
                 </div>
               </div>

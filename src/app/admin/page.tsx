@@ -248,7 +248,13 @@ export default function AdminDashboardPage() {
                     </div>
                     <p className="text-[11px] text-gray-500 mt-0.5">
                       {order.customerFirstName} {order.customerLastName} •{' '}
-                      {order.shippingMethod === 'pickup' ? 'Retrait boutique' : 'Colissimo'}
+                      {order.shippingMethod === 'pickup' ? (
+                        <span className="text-plum font-semibold">Retrait atelier</span>
+                      ) : (
+                        <span className="text-blue-700 font-semibold">
+                          Colissimo {order.shippingAddress?.city ? `(${order.shippingAddress.city})` : ''}
+                        </span>
+                      )}
                     </p>
                   </div>
                   <div className="text-right">

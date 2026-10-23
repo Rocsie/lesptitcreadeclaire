@@ -119,7 +119,7 @@ export default function AdminPromosPage() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 font-serif">Codes Promotionnels</h1>
           <p className="text-xs text-gray-500 mt-0.5">
@@ -128,15 +128,93 @@ export default function AdminPromosPage() {
         </div>
         <button
           onClick={handleOpenCreate}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-plum hover:bg-plum-dark text-white text-xs font-semibold transition-all shadow-xs"
+          className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-plum hover:bg-plum-dark text-white text-xs font-semibold active:scale-98 transition-all shadow-xs"
         >
           <Plus className="w-4 h-4" />
           <span>Créer un code promo</span>
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto">
+      {/* Vue Mobile (Cartes adaptées au tactile) */}
+      <div className="block md:hidden space-y-3.5">
+        {coupons.map((c) => (
+          <div key={c.id} className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <span className="font-mono font-bold text-base text-plum bg-rose-powder/20 px-2.5 py-1 rounded-lg inline-block">
+                  {c.code}
+                </span>
+                {c.description && (
+                  <p className="text-xs text-gray-600 mt-1">{c.description}</p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleToggleActive(c)}
+                className={`min-h-[38px] px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 active:scale-95 ${
+                  c.isActive
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                    : 'bg-gray-100 text-gray-500 border border-gray-200'
+                }`}
+              >
+                {c.isActive ? 'Actif' : 'Inactif'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 bg-gray-50 p-2.5 rounded-xl text-center text-xs">
+              <div>
+                <span className="text-[10px] text-gray-400 block uppercase">Remise</span>
+                <span className="font-bold text-gray-900">
+                  {c.discountType === 'PERCENTAGE'
+                    ? `-${c.discountValue}%`
+                    : c.discountType === 'FIXED_AMOUNT'
+                    ? `-${c.discountValue} €`
+                    : 'Port offert'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-gray-400 block uppercase">Min. Achat</span>
+                <span className="font-semibold text-gray-700">
+                  {c.minOrderAmount > 0 ? `${c.minOrderAmount} €` : '0 €'}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] text-gray-400 block uppercase">Utilisations</span>
+                <span className="font-semibold text-gray-700">
+                  {c.usesCount} {c.maxUses ? `/ ${c.maxUses}` : ''}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
+              <button
+                onClick={() => handleOpenEdit(c)}
+                className="flex-1 min-h-[44px] py-2 rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold text-xs border border-gray-200 flex items-center justify-center gap-1.5 active:scale-98 transition-all"
+              >
+                <Edit2 className="w-3.5 h-3.5 text-plum" />
+                <span>Modifier</span>
+              </button>
+              <button
+                onClick={() => handleDelete(c.id, c.code)}
+                className="min-h-[44px] px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs border border-red-200 flex items-center justify-center gap-1.5 active:scale-98 transition-all"
+                title="Supprimer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Supprimer</span>
+              </button>
+            </div>
+          </div>
+        ))}
+        {coupons.length === 0 && (
+          <div className="p-8 text-center bg-white rounded-2xl border border-gray-200 text-gray-400 text-xs">
+            Aucun code promotionnel créé pour le moment.
+          </div>
+        )}
+      </div>
+
+      {/* Vue Bureau (Tableau traditionnel) */}
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
+        <div className="overflow-x-auto min-w-[700px]">
           <table className="w-full text-left text-xs">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-semibold">
               <tr>
@@ -187,14 +265,14 @@ export default function AdminPromosPage() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => handleOpenEdit(c)}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-plum hover:bg-rose-powder/20 transition-all"
+                        className="p-2 rounded-lg text-gray-500 hover:text-plum hover:bg-rose-powder/20 active:scale-95 transition-all"
                         title="Modifier"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(c.id, c.code)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                        className="p-2 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 active:scale-95 transition-all"
                         title="Supprimer"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -215,24 +293,24 @@ export default function AdminPromosPage() {
         </div>
       </div>
 
-      {/* Modal Création / Édition Code Promo */}
+      {/* Modal Création / Édition Code Promo (Mobile Bottom Sheet & Desktop Modal) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 animate-in slide-in-from-bottom sm:zoom-in-95 max-h-[92dvh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 sticky top-0 bg-white z-10">
               <h3 className="font-serif text-lg font-bold text-gray-900">
                 {editingCoupon ? 'Modifier le code promo' : 'Nouveau code promo'}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 active:scale-95 transition-all"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4 text-xs">
+            <form onSubmit={handleSave} className="space-y-4 text-xs pb-4 sm:pb-0">
               <div>
                 <label className="font-semibold block mb-1">Code promo (lettres / chiffres) *</label>
                 <input
@@ -256,13 +334,13 @@ export default function AdminPromosPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-semibold block mb-1">Type de réduction</label>
                   <select
                     value={form.discountType}
                     onChange={(e) => setForm({ ...form, discountType: e.target.value as any })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 font-medium"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 font-medium bg-white"
                   >
                     <option value="PERCENTAGE">Pourcentage (%)</option>
                     <option value="FIXED_AMOUNT">Montant fixe (€)</option>
@@ -289,7 +367,7 @@ export default function AdminPromosPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-semibold block mb-1">Panier minimum requis (€)</label>
                   <input
@@ -314,28 +392,28 @@ export default function AdminPromosPage() {
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer pt-1">
+              <label className="flex items-center gap-2.5 cursor-pointer pt-1 min-h-[44px]">
                 <input
                   type="checkbox"
                   checked={form.isActive}
                   onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                  className="rounded text-plum"
+                  className="w-5 h-5 rounded text-plum"
                 />
-                <span className="font-semibold">Code actif et utilisable au paiement</span>
+                <span className="font-semibold text-gray-800">Code actif et utilisable au paiement</span>
               </label>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-95 transition-all text-center"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-plum hover:bg-plum-dark text-white font-semibold transition-all shadow-xs disabled:opacity-50"
+                  className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-plum hover:bg-plum-dark text-white font-semibold transition-all shadow-xs disabled:opacity-50 active:scale-98 text-center"
                 >
                   {saving ? 'Enregistrement...' : editingCoupon ? 'Modifier le code' : 'Créer le code promo'}
                 </button>

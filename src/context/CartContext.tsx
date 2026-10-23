@@ -29,12 +29,14 @@ interface CartContextType {
   removePromoCode: () => void;
   freeShippingThreshold: number;
   amountNeededForFreeShipping: number;
+  isLoaded: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discountAmount: number; description?: string } | null>(null);
 
@@ -49,6 +51,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       // Ignored
+    } finally {
+      setIsLoaded(true);
     }
   }, []);
 
@@ -163,6 +167,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removePromoCode,
         freeShippingThreshold,
         amountNeededForFreeShipping,
+        isLoaded,
       }}
     >
       {children}

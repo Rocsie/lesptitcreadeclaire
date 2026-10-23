@@ -87,7 +87,7 @@
       "compareAtPrice": 0,
       "categoryId": "cat-1",
       "collectionId": "col-1",
-      "stock": 5,
+      "stock": 3,
       "lowStockThreshold": 3,
       "status": "PUBLISHED",
       "isUniquePiece": false,
@@ -109,6 +109,82 @@
     }
   ],
   "orders": [
+    {
+      "id": "ord-1792755905146",
+      "orderNumber": "PCC-2026-000005",
+      "customerEmail": "sophie.martin@example.fr",
+      "customerFirstName": "Sophie",
+      "customerLastName": "Martin",
+      "customerPhone": "06 12 34 56 78",
+      "shippingMethod": "pickup",
+      "shippingCost": 0,
+      "shippingAddress": {
+        "name": "Sophie Martin",
+        "address1": "Retrait en boutique L'Atelier",
+        "address2": "",
+        "postalCode": "11210",
+        "city": "Port-la-Nouvelle",
+        "country": "France",
+        "phone": "06 12 34 56 78"
+      },
+      "subtotal": 35,
+      "discountAmount": 0,
+      "promoCode": null,
+      "total": 35,
+      "status": "PAID",
+      "paymentMethod": "card_simulation",
+      "paymentStatus": "COMPLETED",
+      "customerNote": null,
+      "createdAt": "2026-10-23T11:45:05.146Z",
+      "items": [
+        {
+          "id": "item-1792755905146-0",
+          "productId": "prod-1791728477622",
+          "productName": "uh",
+          "imageUrl": "/uploads/607817539-17881145316431590-21-1791727263944-3333.jpg",
+          "unitPrice": 35,
+          "quantity": 1,
+          "totalPrice": 35
+        }
+      ]
+    },
+    {
+      "id": "ord-1792753760602",
+      "orderNumber": "PCC-2026-000004",
+      "customerEmail": "sophie.martin@example.fr",
+      "customerFirstName": "Sophie",
+      "customerLastName": "Martin",
+      "customerPhone": "06 12 34 56 78",
+      "shippingMethod": "standard_delivery",
+      "shippingCost": 4.9,
+      "shippingAddress": {
+        "name": "Sophie Martin",
+        "address1": "63rue Joseph Mouret",
+        "postalCode": "11210",
+        "city": "Port-la-nouvelle",
+        "country": "France"
+      },
+      "subtotal": 35,
+      "discountAmount": 0,
+      "promoCode": null,
+      "total": 39.9,
+      "status": "SHIPPED",
+      "paymentMethod": "card_simulation",
+      "paymentStatus": "COMPLETED",
+      "customerNote": null,
+      "createdAt": "2026-10-23T11:09:20.602Z",
+      "items": [
+        {
+          "id": "item-1792753760602-0",
+          "productId": "prod-1791728477622",
+          "productName": "uh",
+          "imageUrl": "/uploads/607817539-17881145316431590-21-1791727263944-3333.jpg",
+          "unitPrice": 35,
+          "quantity": 1,
+          "totalPrice": 35
+        }
+      ]
+    },
     {
       "id": "ord-1",
       "orderNumber": "PCC-2026-000001",
@@ -338,6 +414,27 @@
     }
   ],
   "emailLogs": [
+    {
+      "id": "em-1792755905146",
+      "recipient": "sophie.martin@example.fr",
+      "subject": "Confirmation de votre commande PCC-2026-000005 • Les P'tites Créa de Claire",
+      "template": "ORDER_CONFIRMATION",
+      "sentAt": "23/10/2026 13:45:05"
+    },
+    {
+      "id": "em-1792754582761",
+      "recipient": "sophie.martin@example.fr",
+      "subject": "Votre commande PCC-2026-000004 vient d'être expédiée !",
+      "template": "ORDER_SHIPPED",
+      "sentAt": "23/10/2026 13:23:02"
+    },
+    {
+      "id": "em-1792753760602",
+      "recipient": "sophie.martin@example.fr",
+      "subject": "Confirmation de votre commande PCC-2026-000004 • Les P'tites Créa de Claire",
+      "template": "ORDER_CONFIRMATION",
+      "sentAt": "23/10/2026 13:09:20"
+    },
     {
       "id": "em-1",
       "recipient": "sophie.martin@example.fr",

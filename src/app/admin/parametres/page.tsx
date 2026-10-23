@@ -133,11 +133,11 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-2">
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-2.5 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs transition-colors shadow-xs disabled:opacity-50"
+            className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs uppercase tracking-wider active:scale-98 transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? 'Enregistrement en cours...' : saved ? '✓ Enregistré avec succès !' : 'Enregistrer les paramètres'}
           </button>

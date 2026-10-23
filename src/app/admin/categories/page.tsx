@@ -204,24 +204,24 @@ export default function AdminCategoriesPage() {
             </h2>
             <button
               onClick={handleOpenNewCat}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-plum hover:bg-plum-dark text-white text-xs font-semibold transition-all shadow-xs"
+              className="min-h-[42px] flex items-center gap-1.5 px-4 py-2 rounded-xl bg-plum hover:bg-plum-dark text-white text-xs font-semibold active:scale-95 transition-all shadow-xs"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>Ajouter un rayon</span>
             </button>
           </div>
 
           <div className="divide-y divide-gray-100">
             {categories.map((c) => (
-              <div key={c.id} className="py-3 flex items-center justify-between text-xs gap-3">
+              <div key={c.id} className="py-3.5 flex items-center justify-between text-xs gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={c.imageUrl || '/images/hero-atelier.jpg'}
                     alt={c.name}
-                    className="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0"
+                    className="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0"
                   />
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{c.name}</p>
+                    <p className="font-semibold text-gray-900 text-sm truncate">{c.name}</p>
                     <p className="text-[10px] text-gray-400 font-mono truncate">/boutique?categorie={c.slug}</p>
                     {c.description && (
                       <p className="text-[11px] text-gray-500 truncate mt-0.5">{c.description}</p>
@@ -229,18 +229,20 @@ export default function AdminCategoriesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <button
                     onClick={() => handleOpenEditCat(c)}
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-plum hover:bg-rose-powder/20 transition-all"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-600 hover:text-plum hover:bg-rose-powder/20 active:scale-90 transition-all border border-gray-200 sm:border-transparent"
                     title="Modifier"
+                    aria-label="Modifier"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteCat(c.id, c.name)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 active:scale-90 transition-all border border-gray-200 sm:border-transparent"
                     title="Supprimer"
+                    aria-label="Supprimer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -251,32 +253,32 @@ export default function AdminCategoriesPage() {
         </div>
 
         {/* Collections */}
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-2xs space-y-4">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-2xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
             <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
               <Layers className="w-4 h-4 text-plum" />
-              <span>Collections Thématiques ({collections.length})</span>
+              <span>Collections ({collections.length})</span>
             </h2>
             <button
               onClick={handleOpenNewCol}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-plum hover:bg-plum-dark text-white text-xs font-semibold transition-all shadow-xs"
+              className="min-h-[42px] flex items-center gap-1.5 px-4 py-2 rounded-xl bg-plum hover:bg-plum-dark text-white text-xs font-semibold active:scale-95 transition-all shadow-xs"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>Ajouter une collection</span>
             </button>
           </div>
 
           <div className="divide-y divide-gray-100">
             {collections.map((col) => (
-              <div key={col.id} className="py-3 flex items-center justify-between text-xs gap-3">
+              <div key={col.id} className="py-3.5 flex items-center justify-between text-xs gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={col.imageUrl || '/images/hero-atelier.jpg'}
                     alt={col.name}
-                    className="w-10 h-10 rounded-xl object-cover border border-gray-200 shrink-0"
+                    className="w-11 h-11 rounded-xl object-cover border border-gray-200 shrink-0"
                   />
                   <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{col.name}</p>
+                    <p className="font-semibold text-gray-900 text-sm truncate">{col.name}</p>
                     <p className="text-[10px] text-gray-400 truncate">{col.description || 'Sans description'}</p>
                   </div>
                 </div>
@@ -285,10 +287,10 @@ export default function AdminCategoriesPage() {
                   <button
                     type="button"
                     onClick={() => handleToggleColActive(col)}
-                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full transition-all ${
+                    className={`min-h-[38px] text-[11px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 ${
                       col.isActive
-                        ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        : 'bg-gray-100 text-gray-500 border border-gray-200'
                     }`}
                     title="Cliquer pour activer/désactiver"
                   >
@@ -297,15 +299,17 @@ export default function AdminCategoriesPage() {
 
                   <button
                     onClick={() => handleOpenEditCol(col)}
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-plum hover:bg-rose-powder/20 transition-all"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-600 hover:text-plum hover:bg-rose-powder/20 active:scale-90 transition-all border border-gray-200 sm:border-transparent"
                     title="Modifier"
+                    aria-label="Modifier"
                   >
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDeleteCol(col.id, col.name)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center text-gray-400 hover:text-red-600 hover:bg-red-50 active:scale-90 transition-all border border-gray-200 sm:border-transparent"
                     title="Supprimer"
+                    aria-label="Supprimer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -318,22 +322,22 @@ export default function AdminCategoriesPage() {
 
       {/* Modal Création / Édition Catégorie */}
       {isCatModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 sticky top-0 bg-white z-10">
               <h3 className="font-serif text-lg font-bold text-gray-900">
                 {editingCat ? 'Modifier le rayon' : 'Nouveau rayon de bijoux'}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsCatModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 active:scale-95 transition-all"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCat} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveCat} className="space-y-4 text-xs pb-4 sm:pb-0">
               <div>
                 <label className="font-semibold block mb-1">Nom du rayon *</label>
                 <input
@@ -342,7 +346,7 @@ export default function AdminCategoriesPage() {
                   placeholder="Ex : Bracelets & Joncs"
                   value={catForm.name}
                   onChange={(e) => setCatForm({ ...catForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum text-sm"
                 />
               </div>
 
@@ -353,7 +357,7 @@ export default function AdminCategoriesPage() {
                   placeholder="Ex : bracelets-joncs (automatique si vide)"
                   value={catForm.slug}
                   onChange={(e) => setCatForm({ ...catForm, slug: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum font-mono text-[11px]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum font-mono text-xs"
                 />
               </div>
 
@@ -364,7 +368,7 @@ export default function AdminCategoriesPage() {
                   placeholder="Description affichée sur la boutique..."
                   value={catForm.description}
                   onChange={(e) => setCatForm({ ...catForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-plum text-sm"
                 />
               </div>
 
@@ -377,13 +381,13 @@ export default function AdminCategoriesPage() {
                   className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs mb-2"
                 />
                 {uploadedPhotos.length > 0 && (
-                  <div className="flex gap-1.5 overflow-x-auto pb-1">
-                    {uploadedPhotos.slice(0, 6).map((ph) => (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {uploadedPhotos.slice(0, 8).map((ph) => (
                       <button
                         key={ph.url}
                         type="button"
                         onClick={() => setCatForm({ ...catForm, imageUrl: ph.url })}
-                        className={`w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0 ${
+                        className={`w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 active:scale-95 transition-transform ${
                           catForm.imageUrl === ph.url ? 'border-plum scale-105' : 'border-gray-200 opacity-70'
                         }`}
                       >
@@ -394,18 +398,18 @@ export default function AdminCategoriesPage() {
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setIsCatModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-95 transition-all text-center"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-plum hover:bg-plum-dark text-white font-semibold transition-all shadow-xs disabled:opacity-50"
+                  className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-plum hover:bg-plum-dark text-white font-semibold transition-all shadow-xs disabled:opacity-50 active:scale-98 text-center"
                 >
                   {saving ? 'Enregistrement...' : editingCat ? 'Modifier' : 'Créer le rayon'}
                 </button>
@@ -417,22 +421,22 @@ export default function AdminCategoriesPage() {
 
       {/* Modal Création / Édition Collection */}
       {isColModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-w-lg w-full shadow-2xl space-y-4 max-h-[92dvh] overflow-y-auto animate-in slide-in-from-bottom sm:zoom-in-95">
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100 sticky top-0 bg-white z-10">
               <h3 className="font-serif text-lg font-bold text-gray-900">
                 {editingCol ? 'Modifier la collection' : 'Nouvelle collection thématique'}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsColModalOpen(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100"
+                className="w-10 h-10 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 active:scale-95 transition-all"
               >
-                <X className="w-4 h-4" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCol} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveCol} className="space-y-4 text-xs pb-4 sm:pb-0">
               <div>
                 <label className="font-semibold block mb-1">Nom de la collection *</label>
                 <input
@@ -441,7 +445,7 @@ export default function AdminCategoriesPage() {
                   placeholder="Ex : Lueur & Cristaux d'Hiver"
                   value={colForm.name}
                   onChange={(e) => setColForm({ ...colForm, name: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum text-sm"
                 />
               </div>
 
@@ -452,7 +456,7 @@ export default function AdminCategoriesPage() {
                   placeholder="Ex : lueur-et-cristaux"
                   value={colForm.slug}
                   onChange={(e) => setColForm({ ...colForm, slug: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum font-mono text-[11px]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum font-mono text-xs"
                 />
               </div>
 
@@ -463,7 +467,7 @@ export default function AdminCategoriesPage() {
                   placeholder="Univers, inspirations de l'Atelier..."
                   value={colForm.description}
                   onChange={(e) => setColForm({ ...colForm, description: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-none focus:border-plum text-sm"
                 />
               </div>
 
@@ -476,13 +480,13 @@ export default function AdminCategoriesPage() {
                   className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs mb-2"
                 />
                 {uploadedPhotos.length > 0 && (
-                  <div className="flex gap-1.5 overflow-x-auto pb-1">
-                    {uploadedPhotos.slice(0, 6).map((ph) => (
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {uploadedPhotos.slice(0, 8).map((ph) => (
                       <button
                         key={ph.url}
                         type="button"
                         onClick={() => setColForm({ ...colForm, imageUrl: ph.url })}
-                        className={`w-10 h-10 rounded-lg overflow-hidden border-2 shrink-0 ${
+                        className={`w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 active:scale-95 transition-transform ${
                           colForm.imageUrl === ph.url ? 'border-plum scale-105' : 'border-gray-200 opacity-70'
                         }`}
                       >
@@ -493,28 +497,28 @@ export default function AdminCategoriesPage() {
                 )}
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer pt-1">
+              <label className="flex items-center gap-2.5 cursor-pointer pt-1 min-h-[44px]">
                 <input
                   type="checkbox"
                   checked={colForm.isActive}
                   onChange={(e) => setColForm({ ...colForm, isActive: e.target.checked })}
-                  className="rounded text-plum"
+                  className="w-5 h-5 rounded text-plum"
                 />
-                <span className="font-semibold">Collection active et visible sur le site</span>
+                <span className="font-semibold text-gray-800">Collection active et visible sur le site</span>
               </label>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setIsColModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 active:scale-95 transition-all text-center"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2 rounded-xl bg-plum hover:bg-plum-dark text-white font-semibold transition-all shadow-xs disabled:opacity-50"
+                  className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl bg-plum hover:bg-plum-dark text-white font-semibold transition-all shadow-xs disabled:opacity-50 active:scale-98 text-center"
                 >
                   {saving ? 'Enregistrement...' : editingCol ? 'Modifier' : 'Créer la collection'}
                 </button>

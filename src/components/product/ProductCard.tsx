@@ -78,14 +78,14 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Bouton Favoris en haut à droite */}
         <button
           onClick={handleFavoriteClick}
-          className={`absolute top-3 right-3 min-w-[38px] min-h-[38px] flex items-center justify-center rounded-full backdrop-blur-md transition-transform active:scale-90 shadow-sm z-10 ${
+          className={`absolute top-2.5 right-2.5 w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full backdrop-blur-md transition-transform active:scale-90 shadow-sm z-10 ${
             isLiked
               ? 'bg-plum text-white'
               : 'bg-white/85 text-dark/70 hover:text-plum hover:bg-white'
           }`}
           aria-label="Ajouter aux favoris"
         >
-          <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+          <Heart className={`w-4.5 h-4.5 ${isLiked ? 'fill-current' : ''}`} />
         </button>
 
         {/* Bouton Ajout rapide qui apparaît au survol sur desktop */}
@@ -143,10 +143,10 @@ export default function ProductCard({ product }: ProductCardProps) {
           <button
             onClick={handleQuickAdd}
             disabled={product.stock <= 0}
-            className="sm:hidden min-w-[42px] min-h-[42px] rounded-full bg-plum hover:bg-plum-dark text-white active:scale-90 transition-transform shadow-xs flex items-center justify-center disabled:opacity-40"
+            className="sm:hidden w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-plum hover:bg-plum-dark text-white active:scale-90 transition-transform shadow-xs flex items-center justify-center disabled:opacity-40"
             aria-label="Ajouter au panier"
           >
-            <ShoppingBag className="w-4 h-4" />
+            <ShoppingBag className="w-4.5 h-4.5" />
           </button>
 
 

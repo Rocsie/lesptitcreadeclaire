@@ -131,7 +131,7 @@ export default function AdminHoursPage() {
         <div className="flex justify-end pt-2">
           <button
             type="submit"
-            className="px-8 py-3.5 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs uppercase tracking-wider shadow-md transition-all flex items-center gap-2"
+            className="w-full sm:w-auto min-h-[48px] px-8 py-3.5 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs uppercase tracking-wider shadow-md active:scale-98 transition-all flex items-center justify-center gap-2"
           >
             <Save className="w-4 h-4" />
             <span>Enregistrer les horaires</span>

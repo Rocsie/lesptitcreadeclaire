@@ -60,7 +60,7 @@ export default function AdminClientsPage() {
         </p>
       </div>
 
-      <div className="p-4 rounded-2xl bg-white border border-gray-200">
+      <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs">
         <div className="relative max-w-md">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
@@ -68,13 +68,66 @@ export default function AdminClientsPage() {
             placeholder="Rechercher par nom ou email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-plum"
+            className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-plum"
           />
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
-        <div className="overflow-x-auto">
+      {/* Vue Mobile (Cartes clientes adaptées au téléphone) */}
+      <div className="block md:hidden space-y-3">
+        {clients.map((c: any) => (
+          <div key={c.email} className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="font-bold text-gray-900 text-sm">{c.name}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Dernier achat : {new Date(c.lastOrder).toLocaleDateString('fr-FR')}
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="font-serif font-bold text-base text-plum block">
+                  {c.totalSpent.toFixed(2)} €
+                </span>
+                <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  {c.ordersCount} commande{c.ordersCount > 1 ? 's' : ''}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-gray-100">
+              {c.phone && c.phone !== 'Non renseigné' ? (
+                <a
+                  href={`tel:${c.phone.replace(/\s+/g, '')}`}
+                  className="min-h-[42px] px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-semibold flex items-center justify-center gap-1.5 border border-emerald-200 active:scale-95 transition-all"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  <span>Appeler</span>
+                </a>
+              ) : (
+                <div className="min-h-[42px] px-3 py-2 rounded-xl bg-gray-50 text-gray-400 text-xs font-medium flex items-center justify-center border border-gray-100">
+                  Pas de tél.
+                </div>
+              )}
+              <a
+                href={`mailto:${c.email}`}
+                className="min-h-[42px] px-3 py-2 rounded-xl bg-rose-powder/20 hover:bg-rose-powder/35 text-plum text-xs font-semibold flex items-center justify-center gap-1.5 border border-rose-powder/40 active:scale-95 transition-all truncate"
+              >
+                <Mail className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Email</span>
+              </a>
+            </div>
+          </div>
+        ))}
+        {clients.length === 0 && (
+          <div className="p-8 text-center bg-white rounded-2xl border border-gray-200 text-gray-400 text-xs">
+            Aucun client ne correspond à votre recherche.
+          </div>
+        )}
+      </div>
+
+      {/* Vue Bureau (Tableau traditionnel) */}
+      <div className="hidden md:block bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
+        <div className="overflow-x-auto min-w-[650px]">
           <table className="w-full text-left text-xs">
             <thead className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase tracking-wider font-semibold">
               <tr>
@@ -92,8 +145,14 @@ export default function AdminClientsPage() {
                     <p className="font-semibold text-gray-900">{c.name}</p>
                   </td>
                   <td className="p-4 text-gray-500">
-                    <p className="flex items-center gap-1.5"><Mail className="w-3 h-3 text-gray-400" /> {c.email}</p>
-                    <p className="flex items-center gap-1.5 mt-0.5"><Phone className="w-3 h-3 text-gray-400" /> {c.phone}</p>
+                    <a href={`mailto:${c.email}`} className="flex items-center gap-1.5 hover:text-plum transition-colors">
+                      <Mail className="w-3 h-3 text-gray-400" /> {c.email}
+                    </a>
+                    {c.phone && c.phone !== 'Non renseigné' && (
+                      <a href={`tel:${c.phone.replace(/\s+/g, '')}`} className="flex items-center gap-1.5 mt-0.5 hover:text-plum transition-colors">
+                        <Phone className="w-3 h-3 text-gray-400" /> {c.phone}
+                      </a>
+                    )}
                   </td>
                   <td className="p-4">
                     <span className="font-bold text-gray-900">{c.ordersCount} commande{c.ordersCount > 1 ? 's' : ''}</span>

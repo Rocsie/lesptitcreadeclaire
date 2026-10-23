@@ -52,10 +52,10 @@ export default function CartDrawer() {
         className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
-        <div className="w-screen max-w-md bg-cream shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10 h-full max-h-[100dvh]">
+        <div className="w-screen max-w-md bg-cream shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300 h-full max-h-[100dvh]">
           {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-rose-powder/30 flex items-center justify-between bg-cream-warm">
+          <div className="p-4 sm:p-5 border-b border-rose-powder/30 flex items-center justify-between bg-cream-warm shrink-0">
             <div className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-plum" />
               <h2 className="font-serif text-xl font-bold text-dark">Mon Panier</h2>
@@ -73,7 +73,7 @@ export default function CartDrawer() {
           </div>
 
           {/* Jauge Livraison Gratuite */}
-          <div className="bg-rose-light/50 px-5 py-3 border-b border-rose-powder/20">
+          <div className="bg-rose-light/50 px-5 py-3 border-b border-rose-powder/20 shrink-0">
             {amountNeededForFreeShipping > 0 ? (
               <div>
                 <p className="text-xs text-dark/80 mb-1.5 flex items-center justify-between font-medium">
@@ -109,7 +109,7 @@ export default function CartDrawer() {
                 <Link
                   href="/boutique"
                   onClick={closeCart}
-                  className="mt-6 px-6 py-3 rounded-full bg-plum text-white text-xs font-semibold uppercase tracking-wider hover:bg-plum-dark active:scale-95 transition-all shadow-sm"
+                  className="mt-6 px-6 py-3 min-h-[44px] inline-flex items-center justify-center rounded-full bg-plum text-white text-xs font-semibold uppercase tracking-wider hover:bg-plum-dark active:scale-95 transition-all shadow-sm"
                 >
                   Découvrir la boutique
                 </Link>
@@ -130,7 +130,7 @@ export default function CartDrawer() {
                         </h4>
                         <button
                           onClick={() => removeItem(item.productId, item.variantId)}
-                          className="w-9 h-9 rounded-full flex items-center justify-center text-muted/60 hover:text-red-500 hover:bg-red-50 active:scale-90 transition-all shrink-0"
+                          className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full flex items-center justify-center text-muted/60 hover:text-red-500 hover:bg-red-50 active:scale-90 transition-all shrink-0"
                           aria-label="Supprimer"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -148,7 +148,7 @@ export default function CartDrawer() {
                       <div className="flex items-center border border-rose-powder/40 rounded-full bg-white p-0.5 shadow-xs">
                         <button
                           onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variantId)}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-dark hover:text-plum hover:bg-rose-powder/20 active:bg-rose-powder/40 active:scale-90 transition-all"
+                          className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center text-dark hover:text-plum hover:bg-rose-powder/20 active:bg-rose-powder/40 active:scale-90 transition-all"
                           aria-label="Diminuer"
                         >
                           <Minus className="w-3.5 h-3.5" />
@@ -156,7 +156,7 @@ export default function CartDrawer() {
                         <span className="px-2.5 text-xs font-bold text-dark min-w-[22px] text-center">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variantId)}
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-dark hover:text-plum hover:bg-rose-powder/20 active:bg-rose-powder/40 active:scale-90 transition-all"
+                          className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center text-dark hover:text-plum hover:bg-rose-powder/20 active:bg-rose-powder/40 active:scale-90 transition-all"
                           aria-label="Augmenter"
                         >
                           <Plus className="w-3.5 h-3.5" />
@@ -174,7 +174,7 @@ export default function CartDrawer() {
 
           {/* Footer avec Totaux et Checkout */}
           {items.length > 0 && (
-            <div className="p-4 sm:p-5 border-t border-rose-powder/30 bg-cream-warm space-y-4">
+            <div className="p-4 sm:p-5 pb-8 sm:pb-5 border-t border-rose-powder/30 bg-cream-warm space-y-4 shrink-0">
               {/* Formulaire code promo */}
               {!appliedPromo ? (
                 <form onSubmit={handleApplyPromo} className="flex gap-2">
@@ -185,26 +185,26 @@ export default function CartDrawer() {
                       placeholder="Code promo (ex: BIENVENUE10)"
                       value={promoInput}
                       onChange={(e) => setPromoInput(e.target.value)}
-                      className="w-full pl-8 pr-3 py-2 text-xs bg-white rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum"
+                      className="w-full pl-8 pr-3 py-2.5 text-xs bg-white rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum"
                     />
                   </div>
                   <button
                     type="submit"
                     disabled={isApplying}
-                    className="px-4 py-2 bg-plum hover:bg-plum-dark text-white font-semibold text-xs rounded-xl active:scale-95 transition-all shadow-xs disabled:opacity-50"
+                    className="min-h-[42px] px-4 py-2 bg-plum hover:bg-plum-dark text-white font-semibold text-xs rounded-xl active:scale-95 transition-all shadow-xs disabled:opacity-50 flex items-center justify-center shrink-0"
                   >
                     Appliquer
                   </button>
                 </form>
               ) : (
-                <div className="flex items-center justify-between bg-rose-light/70 px-3.5 py-2 rounded-xl border border-rose-powder/30 text-xs">
+                <div className="flex items-center justify-between bg-rose-light/70 px-3.5 py-2.5 rounded-xl border border-rose-powder/30 text-xs">
                   <div className="flex items-center gap-1.5 text-plum font-semibold">
                     <Tag className="w-3.5 h-3.5" />
                     <span>{appliedPromo.code} (-{appliedPromo.discountAmount.toFixed(2)} €)</span>
                   </div>
                   <button
                     onClick={removePromoCode}
-                    className="text-muted hover:text-red-500 active:scale-95 text-xs font-medium px-2 py-1 rounded"
+                    className="text-muted hover:text-red-500 active:scale-95 text-xs font-semibold px-2 py-1 rounded"
                   >
                     Supprimer
                   </button>
@@ -243,12 +243,11 @@ export default function CartDrawer() {
               <Link
                 href="/checkout"
                 onClick={closeCart}
-                className="w-full flex items-center justify-center gap-2 py-4 px-6 rounded-full bg-gradient-to-r from-plum to-plum-dark text-white font-semibold text-sm tracking-wide shadow-md hover:shadow-lg active:scale-98 transition-all"
+                className="w-full min-h-[50px] flex items-center justify-center gap-2 py-3.5 px-6 rounded-full bg-gradient-to-r from-plum to-plum-dark text-white font-semibold text-sm tracking-wide shadow-md hover:shadow-lg active:scale-98 transition-all"
               >
                 <span>Commander</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
-
 
               <p className="text-center text-[10px] text-muted">
                 Paiement 100% sécurisé • Retrait atelier à Port-la-Nouvelle ou expédition soignée

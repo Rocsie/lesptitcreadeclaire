@@ -144,7 +144,7 @@ function BoutiqueContent() {
           {/* Bouton pour ouvrir filtres sur mobile */}
           <button
             onClick={() => setMobileFiltersOpen(true)}
-            className="lg:hidden flex items-center gap-1.5 px-4 py-2 rounded-full bg-rose-light text-plum text-xs font-semibold"
+            className="lg:hidden flex items-center justify-center gap-1.5 px-4 py-2 min-h-[42px] rounded-full bg-rose-light text-plum text-xs font-semibold active:scale-95 transition-all shadow-xs"
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
             <span>Filtres</span>
@@ -157,7 +157,7 @@ function BoutiqueContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-cream-warm border border-rose-powder/40 rounded-full px-4 py-2 pr-8 text-xs font-medium text-dark focus:outline-none focus:border-plum"
+                className="appearance-none bg-cream-warm border border-rose-powder/40 rounded-full px-4 py-2 min-h-[42px] pr-8 text-xs font-medium text-dark focus:outline-none focus:border-plum"
               >
                 <option value="popular">Popularité</option>
                 <option value="newest">Nouveautés d&apos;abord</option>
@@ -363,7 +363,7 @@ function BoutiqueContent() {
             onClick={() => setMobileFiltersOpen(false)}
             className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity animate-in fade-in"
           />
-          <div className="relative w-4/5 max-w-sm bg-cream p-5 sm:p-6 ml-auto h-full overflow-y-auto space-y-6 shadow-2xl z-10 animate-in slide-in-from-right duration-200">
+          <div className="relative w-4/5 max-w-sm bg-cream p-5 sm:p-6 ml-auto h-full max-h-[100dvh] overflow-y-auto space-y-6 shadow-2xl z-10 animate-in slide-in-from-right duration-200 pb-12">
             <div className="flex items-center justify-between pb-4 border-b border-rose-powder/20">
               <h3 className="font-serif text-lg font-bold text-dark flex items-center gap-2">
                 <SlidersHorizontal className="w-4 h-4 text-plum" />
@@ -465,10 +465,10 @@ function BoutiqueContent() {
               </label>
             </div>
 
-            <div className="flex flex-col gap-2 pt-4 border-t border-rose-powder/20">
+            <div className="flex flex-col gap-2.5 pt-4 border-t border-rose-powder/20 pb-4">
               <button
                 onClick={() => setMobileFiltersOpen(false)}
-                className="w-full py-3.5 rounded-full bg-plum text-white font-semibold text-xs active:scale-95 shadow-md"
+                className="w-full min-h-[46px] py-3 rounded-full bg-plum text-white font-semibold text-xs active:scale-95 shadow-md flex items-center justify-center transition-all"
               >
                 Voir les {filteredProducts.length} créations
               </button>
@@ -477,7 +477,7 @@ function BoutiqueContent() {
                   handleResetFilters();
                   setMobileFiltersOpen(false);
                 }}
-                className="w-full py-2.5 rounded-full bg-rose-powder/30 text-plum font-semibold text-xs active:scale-95"
+                className="w-full min-h-[44px] py-2.5 rounded-full bg-rose-powder/30 text-plum font-semibold text-xs active:scale-95 flex items-center justify-center transition-all"
               >
                 Réinitialiser
               </button>

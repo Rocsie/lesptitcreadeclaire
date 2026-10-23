@@ -156,7 +156,7 @@ function ProductDetailContent() {
             {/* Favoris */}
             <button
               onClick={() => toggleFavorite(product.id)}
-              className={`absolute top-4 right-4 p-3 rounded-full backdrop-blur-md transition-all shadow-md ${
+              className={`absolute top-4 right-4 w-12 h-12 rounded-full backdrop-blur-md transition-all shadow-md flex items-center justify-center active:scale-90 ${
                 isLiked ? 'bg-plum text-white' : 'bg-white/80 text-dark/70 hover:text-plum hover:bg-white'
               }`}
               aria-label="Sauvegarder dans les favoris"
@@ -238,7 +238,7 @@ function ProductDetailContent() {
                     key={v.id}
                     type="button"
                     onClick={() => setSelectedVariant(v)}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold border transition-all active:scale-95 flex items-center gap-2 ${
+                    className={`min-h-[42px] px-4 py-2 rounded-full text-xs font-semibold border transition-all active:scale-95 flex items-center gap-2 ${
                       selectedVariant?.id === v.id
                         ? 'border-plum bg-rose-light text-plum shadow-xs ring-1 ring-plum/30'
                         : 'border-rose-powder/40 bg-white text-dark hover:border-plum'
@@ -265,7 +265,7 @@ function ProductDetailContent() {
                 <button
                   type="button"
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-dark text-lg font-bold hover:text-plum hover:bg-rose-powder/20 active:bg-rose-powder/40 active:scale-90 transition-all"
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-dark text-lg font-bold hover:text-plum hover:bg-rose-powder/20 active:bg-rose-powder/40 active:scale-90 transition-all"
                   aria-label="Diminuer la quantité"
                 >
                   -
@@ -274,7 +274,7 @@ function ProductDetailContent() {
                 <button
                   type="button"
                   onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                  className="w-10 h-10 rounded-full flex items-center justify-center text-dark text-lg font-bold hover:text-plum hover:bg-rose-powder/20 active:bg-rose-powder/40 active:scale-90 transition-all"
+                  className="w-11 h-11 rounded-full flex items-center justify-center text-dark text-lg font-bold hover:text-plum hover:bg-rose-powder/20 active:bg-rose-powder/40 active:scale-90 transition-all"
                   aria-label="Augmenter la quantité"
                 >
                   +
@@ -286,7 +286,7 @@ function ProductDetailContent() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={product.stock <= 0}
-                className="flex-1 min-h-[48px] py-3.5 px-6 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs sm:text-sm uppercase tracking-wider transition-all shadow-md hover:shadow-lg active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 min-h-[50px] py-3.5 px-6 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs sm:text-sm uppercase tracking-wider transition-all shadow-md hover:shadow-lg active:scale-98 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>{product.stock <= 0 ? 'En rupture' : 'Ajouter au panier'}</span>
@@ -298,7 +298,7 @@ function ProductDetailContent() {
               <button
                 type="button"
                 onClick={handleBuyNow}
-                className="w-full min-h-[48px] py-3.5 px-6 rounded-full bg-gradient-to-r from-rose-old to-plum text-white font-semibold text-xs sm:text-sm uppercase tracking-wider transition-all shadow-sm hover:shadow-md active:scale-98 text-center"
+                className="w-full min-h-[50px] py-3.5 px-6 rounded-full bg-gradient-to-r from-rose-old to-plum text-white font-semibold text-xs sm:text-sm uppercase tracking-wider transition-all shadow-sm hover:shadow-md active:scale-98 text-center flex items-center justify-center"
               >
                 Acheter maintenant
               </button>

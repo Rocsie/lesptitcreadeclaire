@@ -149,27 +149,47 @@ function AdminLayoutContent({
                 </button>
               </div>
               <nav className="mt-4 space-y-1">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-gray-700 hover:bg-gray-100 active:bg-gray-200 transition-all"
-                  >
-                    <item.icon className="w-4 h-4 text-plum shrink-0" />
-                    <span>{item.label}</span>
-                  </Link>
-                ))}
+                {navItems.map((item) => {
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setSidebarOpen(false)}
+                      className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-xs font-semibold min-h-[44px] active:scale-98 transition-all ${
+                        isActive
+                          ? 'bg-plum text-white shadow-xs'
+                          : 'text-gray-700 hover:bg-gray-100 active:bg-gray-200'
+                      }`}
+                    >
+                      <item.icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-plum'}`} />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
               </nav>
             </div>
-            <div className="pt-4 border-t border-gray-100">
+            <div className="pt-4 border-t border-gray-100 space-y-2">
               <Link
                 href="/"
                 onClick={() => setSidebarOpen(false)}
-                className="block text-center py-3 bg-gray-100 active:bg-gray-200 text-gray-800 text-xs font-semibold rounded-xl mb-2 transition-all"
+                className="flex items-center justify-center gap-2 w-full py-3 px-3 bg-gray-100 active:bg-gray-200 text-gray-800 text-xs font-semibold rounded-xl transition-all min-h-[44px]"
               >
-                Retour boutique
+                <Store className="w-4 h-4 text-plum" />
+                <span>Voir la boutique</span>
               </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  setSidebarOpen(false);
+                  logout();
+                  router.push('/connexion');
+                }}
+                className="flex items-center justify-center gap-2 w-full py-2.5 px-3 text-red-600 active:bg-red-50 text-xs font-semibold rounded-xl transition-colors min-h-[40px]"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Déconnexion</span>
+              </button>
             </div>
           </div>
         </div>

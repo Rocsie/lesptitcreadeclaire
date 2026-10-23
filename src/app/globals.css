@@ -120,12 +120,22 @@ label,
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Cibles tactiles confortables sur mobile */
-@media (max-width: 768px) {
-  button,
-  [role="button"],
-  a.touch-target {
-    min-height: 40px;
+/* Empêcher le zoom automatique d'iOS Safari sur le focus des champs de saisie */
+@media screen and (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="search"],
+  select,
+  textarea {
+    font-size: 16px !important;
   }
+}
+
+/* Fluidité du défilement sur appareils tactiles */
+* {
+  -webkit-overflow-scrolling: touch;
 }
 

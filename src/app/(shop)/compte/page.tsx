@@ -216,6 +216,11 @@ export default function CustomerAccountPage() {
                                 ? "Retrait gratuit à la boutique L'Atelier (Port-la-Nouvelle)"
                                 : 'Livraison Colissimo à domicile'}
                             </p>
+                            {order.shippingMethod !== 'pickup' && order.shippingAddress?.address1 && (
+                              <p className="text-[11px] text-muted mt-1">
+                                <strong>Adresse :</strong> {order.shippingAddress.address1}{order.shippingAddress.address2 ? `, ${order.shippingAddress.address2}` : ''}, {order.shippingAddress.postalCode} {order.shippingAddress.city}
+                              </p>
+                            )}
                           </div>
                           <div>
                             <p className="font-bold text-plum mb-1">Paiement :</p>
