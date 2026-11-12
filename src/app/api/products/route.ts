@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { errorResponse, readBody } from '@/lib/api';
+import { getSessionUser, requireAdmin } from '@/lib/auth';
 import { store } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
@@ -10,7 +11,17 @@ export async function GET(request: Request) {
     const search = searchParams.get('search');
     const category = searchParams.get('category');
 
-    let products = await store.getProducts();
+    // Les brouillons et produits masqués ne sortent que pour l'administration.
+    let products;
+    if (searchParams.get('scope') === 'admin') {
+      const user = await getSessionUser();
+      if (!user || user.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Accès réservé à la gestionnaire.' }, { status: 403 });
+      }
+      products = await store.getProducts();
+    } else {
+      products = await store.getVisibleProducts();
+    }
 
     if (search) {
       const q = search.toLowerCase();
@@ -28,16 +39,17 @@ export async function GET(request: Request) {
 
     return NextResponse.json(products);
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur lors de la récupération des produits' }, { status: 500 });
+    return errorResponse(error, 'Erreur lors de la récupération des produits.');
   }
 }
 
 export async function POST(request: Request) {
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
   try {
-    const body = await request.json();
-    const created = await store.createProduct(body);
+    const created = await store.createProduct(await readBody(request));
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur lors de la création du produit' }, { status: 500 });
+    return errorResponse(error, 'Erreur lors de la création du produit.');
   }
 }

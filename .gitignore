@@ -43,3 +43,14 @@ logs/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Données vivantes de la boutique : commandes, comptes, statistiques, clé de session.
+# Créées au premier démarrage à partir de data/seed.json.
+/data/*
+!/data/seed.json
+
+# Photos envoyées depuis l'administration
+/public/uploads/*
+
+# Sauvegardes créées par "npm run backup"
+/backups/

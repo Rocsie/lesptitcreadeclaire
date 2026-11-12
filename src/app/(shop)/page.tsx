@@ -1,26 +1,45 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Sparkles, ArrowRight, Heart, ShoppingBag, MapPin, Clock, ShieldCheck, Gem, Compass } from 'lucide-react';
+import { Sparkles, ArrowRight, MapPin, Gem } from 'lucide-react';
 import { store } from '@/lib/store';
 import ProductCard from '@/components/product/ProductCard';
 import OctopusLogo from '@/components/brand/OctopusLogo';
 import { FloralCorner, WatercolorBrush, FloralDivider, HandDrawnHeart } from '@/components/brand/FloralAccents';
+import ShopImage from '@/components/ui/ShopImage';
+import JsonLd from '@/components/seo/JsonLd';
+import { localBusinessJsonLd, pageMetadata, websiteJsonLd } from '@/lib/seo';
+
+export const metadata: Metadata = pageMetadata({
+  title: "Bijoux artisanaux à Port-la-Nouvelle | Les P'tites Créa de Claire",
+  absoluteTitle: true,
+  description:
+    "Bijoux faits main à Port-la-Nouvelle (Aude) : boucles d'oreilles, bagues, broches et colliers en pièces uniques et petites séries. Retrait gratuit à l'atelier.",
+  path: '/',
+});
 
 export default async function HomePage() {
-  const products = await store.getProducts();
-  const categories = await store.getCategories();
-  const collections = await store.getCollections();
-  const hours = await store.getOpeningHours();
-  const cms = await store.getCmsSettings();
+  const [products, categories, hours, cms] = await Promise.all([
+    store.getVisibleProducts(),
+    store.getCategories(),
+    store.getOpeningHours(),
+    store.getCmsSettings(),
+  ]);
 
-  const newProducts = products.filter((p) => p.isNew || p.status === 'PUBLISHED').slice(0, 4);
+  // Les nouveautés d'abord, puis les créations les plus récentes pour compléter la rangée.
+  const byDate = [...products].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const newProducts = [...byDate.filter((p) => p.isNew), ...byDate.filter((p) => !p.isNew)].slice(0, 4);
+  const exceptionalNotice = cms.exceptional_notice?.trim();
 
   return (
     <div className="space-y-16 sm:space-y-24 pb-16 overflow-hidden">
+      <JsonLd data={localBusinessJsonLd(cms, hours, products)} />
+      <JsonLd data={websiteJsonLd()} />
       {/* 1. HERO SECTION */}
       <section className="relative min-h-[85vh] sm:min-h-[88vh] flex items-center justify-center pt-8 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-cream via-cream-warm to-cream">
-        <FloralCorner position="top-left" className="top-2 left-2" />
-        <FloralCorner position="top-right" className="top-2 right-2" />
+        {/* Sur téléphone, les rameaux décoratifs passeraient par-dessus le texte : ils sont masqués. */}
+        <FloralCorner position="top-left" className="top-2 left-2 hidden sm:block" />
+        <FloralCorner position="top-right" className="top-2 right-2 hidden sm:block" />
 
         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
           {/* Colonne texte Hero */}
@@ -74,10 +93,13 @@ export default async function HomePage() {
           {/* Colonne visuelle Hero avec composition photographique & mascotte */}
           <div className="lg:col-span-5 relative flex justify-center">
             <div className="relative w-full max-w-md aspect-4/5 rounded-3xl overflow-hidden shadow-2xl border-4 border-white/80 group">
-              <img
+              <ShopImage
                 src="/images/hero-atelier.jpg"
-                alt="Bijoux artisanaux Les P'tites Créa de Claire"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                alt="Boucles d'oreilles, bagues et broche artisanales des P'tites Créa de Claire"
+                fill
+                preload
+                sizes="(min-width: 1024px) 448px, 92vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-dark/60 via-transparent to-transparent" />
 
@@ -118,11 +140,17 @@ export default async function HomePage() {
           <FloralDivider />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {newProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {newProducts.length === 0 ? (
+          <p className="text-center text-sm text-muted py-8">
+            Les prochaines créations arrivent bientôt à l&apos;atelier.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {newProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
 
         <div className="mt-12 text-center">
           <Link
@@ -151,14 +179,16 @@ export default async function HomePage() {
             {categories.map((cat) => (
               <Link
                 key={cat.id}
-                href={`/boutique?categorie=${cat.slug}`}
+                href={`/boutique/${cat.slug}`}
                 className="group flex flex-col items-center text-center p-4 rounded-2xl bg-white border border-rose-powder/30 hover:border-gold/60 transition-all hover:-translate-y-1 hover:shadow-lg"
               >
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 border-2 border-rose-powder/30 group-hover:border-plum transition-colors">
-                  <img
-                    src={cat.imageUrl || '/images/hero-atelier.jpg'}
-                    alt={cat.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden mb-3 border-2 border-rose-powder/30 group-hover:border-plum transition-colors">
+                  <ShopImage
+                    src={cat.imageUrl}
+                    alt=""
+                    fill
+                    sizes="96px"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
                 <h3 className="font-serif text-sm font-bold text-dark group-hover:text-plum transition-colors">
@@ -176,10 +206,12 @@ export default async function HomePage() {
           {/* Photo de Claire à son établi */}
           <div className="lg:col-span-6 relative">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border-4 border-white aspect-4/3 group">
-              <img
+              <ShopImage
                 src="/images/claire-atelier.jpg"
                 alt="Claire créatrice de bijoux artisanaux dans son atelier"
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="object-cover group-hover:scale-105 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-dark/40 via-transparent to-transparent" />
             </div>
@@ -311,11 +343,17 @@ export default async function HomePage() {
               >
                 <span className="font-script text-2xl text-plum">{h.dayGroup}</span>
                 <span className="text-sm font-semibold text-dark mt-1 sm:mt-0">
-                  {h.isClosed ? 'Fermé' : `${h.morningHours} • ${h.afternoonHours}`}
+                  {h.isClosed ? 'Fermé' : [h.morningHours, h.afternoonHours].filter(Boolean).join(' • ')}
                 </span>
               </div>
             ))}
           </div>
+
+          {exceptionalNotice && (
+            <p className="max-w-lg mx-auto px-4 py-3 rounded-2xl bg-rose-light border border-rose-powder/50 text-sm text-plum font-medium">
+              {exceptionalNotice}
+            </p>
+          )}
 
           {/* Mascotte pieuvre & signature */}
           <div className="pt-4 flex flex-col items-center justify-center space-y-2">

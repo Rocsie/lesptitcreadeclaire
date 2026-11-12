@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Layers, Plus, Trash2, Edit2, X, Check, Sparkles, Upload, Loader2 } from 'lucide-react';
-import { Category, Collection } from '@/lib/store';
+import { Layers, Plus, Trash2, Edit2, X } from 'lucide-react';
+import type { Category, Collection } from '@/lib/types';
+import { apiFetch, withBase } from '@/lib/paths';
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -35,11 +36,10 @@ export default function AdminCategoriesPage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<Array<{ name: string; url: string }>>([]);
 
   const fetchAll = () => {
-    setLoading(true);
     Promise.all([
-      fetch('/api/categories').then((r) => r.json()),
-      fetch('/api/collections').then((r) => r.json()),
-      fetch('/api/upload').then((r) => r.json()).catch(() => ({ files: [] })),
+      apiFetch('/api/categories').then((r) => r.json()),
+      apiFetch('/api/collections').then((r) => r.json()),
+      apiFetch('/api/upload').then((r) => r.json()).catch(() => ({ files: [] })),
     ])
       .then(([cats, cols, uploads]) => {
         if (Array.isArray(cats)) setCategories(cats);
@@ -83,34 +83,29 @@ export default function AdminCategoriesPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const slug = catForm.slug.trim() || catForm.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const payload = { ...catForm, slug };
-
-      if (editingCat) {
-        await fetch('/api/categories', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, id: editingCat.id }),
-        });
-      } else {
-        await fetch('/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+      // Sans identifiant saisi, le serveur le crée à partir du nom (sans accent, sans doublon).
+      const res = await apiFetch('/api/categories', {
+        method: editingCat ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingCat ? { ...catForm, id: editingCat.id } : catForm),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Le rayon n'a pas pu être enregistré.");
+        return;
       }
       setIsCatModalOpen(false);
       fetchAll();
-    } catch (err) {
-      alert('Erreur lors de l\'enregistrement de la catégorie');
+    } catch {
+      alert("Connexion au serveur impossible : le rayon n'a pas été enregistré.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteCat = async (id: string, name: string) => {
-    if (confirm(`Voulez-vous vraiment supprimer le rayon "${name}" ?`)) {
-      await fetch(`/api/categories?id=${id}`, { method: 'DELETE' });
+    if (confirm(`Supprimer le rayon "${name}" ? Ses créations restent en vente, sans rayon.`)) {
+      await apiFetch(`/api/categories?id=${id}`, { method: 'DELETE' });
       fetchAll();
     }
   };
@@ -144,33 +139,27 @@ export default function AdminCategoriesPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      const slug = colForm.slug.trim() || colForm.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      const payload = { ...colForm, slug };
-
-      if (editingCol) {
-        await fetch('/api/collections', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, id: editingCol.id }),
-        });
-      } else {
-        await fetch('/api/collections', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+      const res = await apiFetch('/api/collections', {
+        method: editingCol ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingCol ? { ...colForm, id: editingCol.id } : colForm),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "La collection n'a pas pu être enregistrée.");
+        return;
       }
       setIsColModalOpen(false);
       fetchAll();
-    } catch (err) {
-      alert('Erreur lors de l\'enregistrement de la collection');
+    } catch {
+      alert("Connexion au serveur impossible : la collection n'a pas été enregistrée.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleToggleColActive = async (col: Collection) => {
-    await fetch('/api/collections', {
+    await apiFetch('/api/collections', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: col.id, isActive: !col.isActive }),
@@ -180,7 +169,7 @@ export default function AdminCategoriesPage() {
 
   const handleDeleteCol = async (id: string, name: string) => {
     if (confirm(`Voulez-vous vraiment supprimer la collection "${name}" ?`)) {
-      await fetch(`/api/collections?id=${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/collections?id=${id}`, { method: 'DELETE' });
       fetchAll();
     }
   };
@@ -193,6 +182,8 @@ export default function AdminCategoriesPage() {
           Gérez l&apos;organisation de vos rayons de bijoux et vos univers de créations thématiques.
         </p>
       </div>
+
+      {loading && <p className="text-xs text-gray-500">Chargement...</p>}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Catégories */}
@@ -216,13 +207,13 @@ export default function AdminCategoriesPage() {
               <div key={c.id} className="py-3.5 flex items-center justify-between text-xs gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
-                    src={c.imageUrl || '/images/hero-atelier.jpg'}
+                    src={withBase(c.imageUrl || '/images/hero-atelier.jpg')}
                     alt={c.name}
                     className="w-11 h-11 rounded-full object-cover border border-gray-200 shrink-0"
                   />
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 text-sm truncate">{c.name}</p>
-                    <p className="text-[10px] text-gray-400 font-mono truncate">/boutique?categorie={c.slug}</p>
+                    <p className="text-[10px] text-gray-400 font-mono truncate">/boutique/{c.slug}</p>
                     {c.description && (
                       <p className="text-[11px] text-gray-500 truncate mt-0.5">{c.description}</p>
                     )}
@@ -273,7 +264,7 @@ export default function AdminCategoriesPage() {
               <div key={col.id} className="py-3.5 flex items-center justify-between text-xs gap-3">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
-                    src={col.imageUrl || '/images/hero-atelier.jpg'}
+                    src={withBase(col.imageUrl || '/images/hero-atelier.jpg')}
                     alt={col.name}
                     className="w-11 h-11 rounded-xl object-cover border border-gray-200 shrink-0"
                   />
@@ -354,7 +345,7 @@ export default function AdminCategoriesPage() {
                 <label className="font-semibold block mb-1">Identifiant URL (slug)</label>
                 <input
                   type="text"
-                  placeholder="Ex : bracelets-joncs (automatique si vide)"
+                  placeholder="Automatique si vide (ex : bracelets-joncs)"
                   value={catForm.slug}
                   onChange={(e) => setCatForm({ ...catForm, slug: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum font-mono text-xs"
@@ -391,7 +382,7 @@ export default function AdminCategoriesPage() {
                           catForm.imageUrl === ph.url ? 'border-plum scale-105' : 'border-gray-200 opacity-70'
                         }`}
                       >
-                        <img src={ph.url} alt="" className="w-full h-full object-cover" />
+                        <img src={withBase(ph.url)} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -453,7 +444,7 @@ export default function AdminCategoriesPage() {
                 <label className="font-semibold block mb-1">Identifiant URL (slug)</label>
                 <input
                   type="text"
-                  placeholder="Ex : lueur-et-cristaux"
+                  placeholder="Automatique si vide (ex : lueur-et-cristaux)"
                   value={colForm.slug}
                   onChange={(e) => setColForm({ ...colForm, slug: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-plum font-mono text-xs"
@@ -490,7 +481,7 @@ export default function AdminCategoriesPage() {
                           colForm.imageUrl === ph.url ? 'border-plum scale-105' : 'border-gray-200 opacity-70'
                         }`}
                       >
-                        <img src={ph.url} alt="" className="w-full h-full object-cover" />
+                        <img src={withBase(ph.url)} alt="" className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>

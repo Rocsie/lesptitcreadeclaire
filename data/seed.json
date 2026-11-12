@@ -1,0 +1,410 @@
+{
+  "categories": [
+    {
+      "id": "cat-1",
+      "name": "Boucles d'oreilles",
+      "slug": "boucles-d-oreilles",
+      "description": "Créations étincelantes, résines pailletées, cristaux et dormeuses délicates.",
+      "imageUrl": "/images/boucles-oreilles.jpg",
+      "displayOrder": 1
+    },
+    {
+      "id": "cat-2",
+      "name": "Bagues",
+      "slug": "bagues",
+      "description": "Finesse des détails, anneaux ciselés, dorures et géométrie sacrée.",
+      "imageUrl": "/images/bagues.jpg",
+      "displayOrder": 2
+    },
+    {
+      "id": "cat-3",
+      "name": "Broches & Pin's",
+      "slug": "broches",
+      "description": "Poésie et esprit marin, poissons chatoyants et motifs méditerranéens.",
+      "imageUrl": "/images/broches.jpg",
+      "displayOrder": 3
+    },
+    {
+      "id": "cat-4",
+      "name": "Colliers & Pendentifs",
+      "slug": "colliers",
+      "description": "Pierres fines facettées, cabochons colorés et chaînes dorées avec soin.",
+      "imageUrl": "/images/colliers.jpg",
+      "displayOrder": 4
+    },
+    {
+      "id": "cat-5",
+      "name": "Bracelets & Joncs",
+      "slug": "bracelets",
+      "description": "Joncs et créations au fil doré pour sublimer votre poignet.",
+      "imageUrl": "/images/hero-atelier.jpg",
+      "displayOrder": 5
+    },
+    {
+      "id": "cat-6",
+      "name": "Pièces uniques",
+      "slug": "pieces-uniques",
+      "description": "Modèles exclusifs créés en un seul exemplaire numéroté.",
+      "imageUrl": "/images/claire-atelier.jpg",
+      "displayOrder": 6
+    }
+  ],
+  "collections": [
+    {
+      "id": "col-1",
+      "name": "Éclat de Couleurs",
+      "slug": "eclat-de-couleurs",
+      "description": "Palette festive, paillettes lumineuses et résines coulées à la main.",
+      "imageUrl": "/images/boucles-oreilles.jpg",
+      "isActive": true
+    },
+    {
+      "id": "col-2",
+      "name": "Esprit Marin",
+      "slug": "esprit-marin",
+      "description": "Inspirations du littoral de Port-la-Nouvelle, vagues et faune marine.",
+      "imageUrl": "/images/broches.jpg",
+      "isActive": true
+    },
+    {
+      "id": "col-3",
+      "name": "Lumière & Finesse",
+      "slug": "lumiere-et-finesse",
+      "description": "Cristaux taillés, reflets précieux et dorures élégantes.",
+      "imageUrl": "/images/bagues.jpg",
+      "isActive": true
+    }
+  ],
+  "products": [
+    {
+      "id": "prod-1",
+      "name": "Boucles Pivoine Rose Poudré & Paillettes",
+      "slug": "boucles-pivoine-rose-poudre",
+      "reference": "PCC-BO-001",
+      "shortDescription": "Résine artisanale rose fuchsia et paillettes dorées, monture plaqué or.",
+      "description": "Conçues et façonnées avec passion à Port-la-Nouvelle. Chaque goutte de résine capture un kaléidoscope de micro-paillettes brillantes surmontées d'un cabochon facetté. Ultra légères à porter toute la journée.",
+      "price": 34,
+      "compareAtPrice": 39,
+      "categoryId": "cat-1",
+      "collectionId": "col-1",
+      "stock": 4,
+      "lowStockThreshold": 2,
+      "status": "PUBLISHED",
+      "isUniquePiece": false,
+      "isNew": true,
+      "badgeText": "Coup de cœur",
+      "materials": "Résine d'inclusion hypoallergénique, poudres irisées, monture en laiton doré à l'or fin 24k sans nickel.",
+      "dimensions": "Longueur totale : 5,5 cm. Largeur du cabochon : 1,8 cm.",
+      "weightGrams": 8,
+      "careInstructions": "Conserver à l'abri de l'humidité et des parfums directs. Nettoyer avec un chiffon doux sec.",
+      "images": [
+        {
+          "url": "/images/boucles-oreilles.jpg",
+          "altText": "Boucles Pivoine Rose Poudré"
+        }
+      ],
+      "variants": [
+        {
+          "id": "var-1",
+          "name": "Fuchsia étincelant",
+          "color": "#D92374",
+          "stock": 2,
+          "priceDiff": 0
+        },
+        {
+          "id": "var-2",
+          "name": "Vieux rose poudré",
+          "color": "#C87D88",
+          "stock": 2,
+          "priceDiff": 0
+        }
+      ],
+      "viewsCount": 0,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "prod-2",
+      "name": "Bague Ciselée Fleur de Vie & Anneaux Entrelacés",
+      "slug": "bague-ciselee-fleur-de-vie",
+      "reference": "PCC-BAG-002",
+      "shortDescription": "Dentelle de métal ciselée à la main, géométrie sacrée et triple anneau.",
+      "description": "Inspirée par la finesse des détails de l'artisanat d'art. Cette bague ajustable épouse avec grâce votre doigt. Son motif ajouré diffuse la lumière avec subtilité.",
+      "price": 29,
+      "compareAtPrice": null,
+      "categoryId": "cat-2",
+      "collectionId": "col-3",
+      "stock": 3,
+      "lowStockThreshold": 2,
+      "status": "PUBLISHED",
+      "isUniquePiece": false,
+      "isNew": true,
+      "badgeText": "Nouveauté",
+      "materials": "Laiton doré et or rose trempé, finition vernis protecteur dermatologique.",
+      "dimensions": "Taille ajustable du 52 au 58.",
+      "weightGrams": 5,
+      "careInstructions": "Éviter le contact prolongé avec l'eau de mer et les produits ménagers.",
+      "images": [
+        {
+          "url": "/images/bagues.jpg",
+          "altText": "Bague fleur de vie"
+        }
+      ],
+      "variants": [
+        {
+          "id": "var-3",
+          "name": "Doré solaire",
+          "color": "#D4AF37",
+          "stock": 2,
+          "priceDiff": 0
+        },
+        {
+          "id": "var-4",
+          "name": "Or rose délicat",
+          "color": "#E8B4B8",
+          "stock": 1,
+          "priceDiff": 0
+        }
+      ],
+      "viewsCount": 0,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "prod-3",
+      "name": "Broche Poisson des Lagunes 'Esprit Marin'",
+      "slug": "broche-poisson-lagunes-esprit-marin",
+      "reference": "PCC-BRO-003",
+      "shortDescription": "Pièce haute joaillerie de fantaisie, pavage de cristaux lagon et améthyste.",
+      "description": "Hommage direct au littoral audois de Port-la-Nouvelle ! Ce poisson étincelant associe des cristaux facettés turquoise, bleu outremer et prune. Une pièce forte à fixer sur un blazer ou une maille d'hiver.",
+      "price": 45,
+      "compareAtPrice": 52,
+      "categoryId": "cat-3",
+      "collectionId": "col-2",
+      "stock": 2,
+      "lowStockThreshold": 1,
+      "status": "PUBLISHED",
+      "isUniquePiece": true,
+      "isNew": true,
+      "badgeText": "Pièce unique",
+      "materials": "Cristaux facettés autrichiens sertis à la main, alliage bronze vieilli avec épingle de sécurité renforcée.",
+      "dimensions": "6,2 cm x 4,8 cm.",
+      "weightGrams": 19,
+      "careInstructions": "Ranger individuellement dans son écrin en velours fourni.",
+      "images": [
+        {
+          "url": "/images/broches.jpg",
+          "altText": "Broche poisson lagunes"
+        }
+      ],
+      "variants": [
+        {
+          "id": "var-5",
+          "name": "Nuance Lagon & Améthyste",
+          "color": "#00A896",
+          "stock": 2,
+          "priceDiff": 0
+        }
+      ],
+      "viewsCount": 0,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "prod-4",
+      "name": "Plastron Minéral 'Un Style Unique'",
+      "slug": "plastron-mineral-style-unique",
+      "reference": "PCC-COL-004",
+      "shortDescription": "Cabochons turquoise, lapis-lazuli et cornaline tressés en fil d'or fin.",
+      "description": "Création signature entièrement forgée à la main à l'atelier. L'alliance de pierres semi-précieuses polies et de volutes dorées fait de ce bijou une œuvre d'art portable.",
+      "price": 68,
+      "compareAtPrice": null,
+      "categoryId": "cat-4",
+      "collectionId": "col-1",
+      "stock": 2,
+      "lowStockThreshold": 1,
+      "status": "PUBLISHED",
+      "isUniquePiece": true,
+      "isNew": true,
+      "badgeText": "Pièce unique",
+      "materials": "Turquoise naturelle, lapis lazuli d'Afghanistan, cornaline, fil gold-filled 14k.",
+      "dimensions": "Longueur chaîne : 42 cm + chaînette de rallonge 5 cm. Pendentif : 6 cm.",
+      "weightGrams": 24,
+      "careInstructions": "Nettoyer uniquement avec un chiffon en microfibre doux sans solvant.",
+      "images": [
+        {
+          "url": "/images/colliers.jpg",
+          "altText": "Plastron minéral"
+        }
+      ],
+      "variants": [],
+      "viewsCount": 0,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "prod-5",
+      "name": "Dormeuses Cascade de Cristaux 'Lumière et Élégance'",
+      "slug": "dormeuses-cascade-cristaux-lumiere",
+      "reference": "PCC-BO-005",
+      "shortDescription": "Gouttes de verre taillé couleur saphir et cristal pur montées sur or.",
+      "description": "Inspirées de l'ambiance des soirs d'été sur le port. Ces boucles pendantes captent la moindre lueur pour illuminer votre port de tête avec une grâce intemporelle.",
+      "price": 36,
+      "compareAtPrice": null,
+      "categoryId": "cat-1",
+      "collectionId": "col-3",
+      "stock": 5,
+      "lowStockThreshold": 2,
+      "status": "PUBLISHED",
+      "isUniquePiece": false,
+      "isNew": false,
+      "badgeText": "Petite série",
+      "materials": "Verre de Bohême taillé facette diamant, crochets dormeuses sécurisés dorés à l'or fin.",
+      "dimensions": "Hauteur : 4,8 cm.",
+      "weightGrams": 9,
+      "careInstructions": "Éviter les chocs sur surfaces dures.",
+      "images": [
+        {
+          "url": "/images/hero-atelier.jpg",
+          "altText": "Dormeuses cristaux"
+        }
+      ],
+      "variants": [
+        {
+          "id": "var-6",
+          "name": "Reflets Saphir & Cristal",
+          "color": "#104F55",
+          "stock": 3,
+          "priceDiff": 0
+        },
+        {
+          "id": "var-7",
+          "name": "Cristal Pur Transparent",
+          "color": "#E0E7FF",
+          "stock": 2,
+          "priceDiff": 0
+        }
+      ],
+      "viewsCount": 0,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    },
+    {
+      "id": "prod-6",
+      "name": "Broche Florale Perlée Multicolore",
+      "slug": "broche-florale-perlee-multicolore",
+      "reference": "PCC-BRO-006",
+      "shortDescription": "Bouquet de perles baroques et gemmes étincelantes en forme de feuille.",
+      "description": "Une explosion de teintes prune, émeraude et ambre pour apporter un charme vintage chic à vos tenues. Réalisée avec minutie.",
+      "price": 42,
+      "compareAtPrice": 48,
+      "categoryId": "cat-3",
+      "collectionId": "col-1",
+      "stock": 1,
+      "lowStockThreshold": 3,
+      "status": "PUBLISHED",
+      "isUniquePiece": true,
+      "isNew": false,
+      "badgeText": "Dernier exemplaire !",
+      "materials": "Perles d'eau douce nacrées, cristaux navette de synthèse, monture dorée vieillie.",
+      "dimensions": "5 cm x 4 cm.",
+      "weightGrams": 16,
+      "careInstructions": "Conserver dans son pochon protecteur.",
+      "images": [
+        {
+          "url": "/images/hero-atelier.jpg",
+          "altText": "Broche florale"
+        }
+      ],
+      "variants": [],
+      "viewsCount": 0,
+      "createdAt": "2026-10-01T09:00:00.000Z"
+    }
+  ],
+  "orders": [],
+  "hours": [
+    {
+      "id": "h-1",
+      "dayGroup": "Lundi - Mardi",
+      "morningHours": "10 h - 12 h",
+      "afternoonHours": "14 h - 17 h",
+      "isClosed": false,
+      "sortOrder": 1
+    },
+    {
+      "id": "h-2",
+      "dayGroup": "Mercredi - Samedi",
+      "morningHours": "10 h - 12 h",
+      "afternoonHours": "15 h - 18 h 30",
+      "isClosed": false,
+      "sortOrder": 2
+    },
+    {
+      "id": "h-3",
+      "dayGroup": "Dimanche",
+      "morningHours": "10 h - 12 h",
+      "afternoonHours": "14 h - 17 h",
+      "isClosed": false,
+      "sortOrder": 3
+    }
+  ],
+  "coupons": [
+    {
+      "id": "coup-1",
+      "code": "BIENVENUE10",
+      "description": "10% de réduction immédiate pour votre première commande à l'atelier",
+      "discountType": "PERCENTAGE",
+      "discountValue": 10,
+      "minOrderAmount": 30,
+      "maxUses": 100,
+      "usesCount": 0,
+      "isActive": false
+    },
+    {
+      "id": "coup-2",
+      "code": "CLAIRE5",
+      "description": "5€ offerts dès 40€ d'achat sur les créations faites main",
+      "discountType": "FIXED_AMOUNT",
+      "discountValue": 5,
+      "minOrderAmount": 40,
+      "maxUses": 50,
+      "usesCount": 0,
+      "isActive": false
+    },
+    {
+      "id": "coup-3",
+      "code": "PORTLANOUVELLE",
+      "description": "Livraison offerte dès 25€ d'achat",
+      "discountType": "FREE_SHIPPING",
+      "discountValue": 0,
+      "minOrderAmount": 25,
+      "maxUses": 200,
+      "usesCount": 0,
+      "isActive": false
+    }
+  ],
+  "cms": {
+    "site_title": "Les P'tites Créa de Claire",
+    "site_tagline": "Boutique L'Atelier • Bijoux & Créations artisanales faites main",
+    "hero_badge": "Créations artisanales • Pièces uniques & petites séries • Port-la-Nouvelle",
+    "hero_title": "Des créations uniques, imaginées et réalisées avec passion.",
+    "hero_subtitle": "Chaque bijou est façonné avec soin au cœur de notre atelier à Port-la-Nouvelle. Des pièces originales, étincelantes et colorées qui célèbrent la singularité de chacune.",
+    "hero_cta_primary": "Découvrir la boutique",
+    "hero_cta_secondary": "Les petites nouveautés",
+    "banner_announcement": "Retrait gratuit à la boutique L'Atelier à Port-la-Nouvelle • Livraison offerte dès 60 € d'achat",
+    "about_story_title": "L'histoire des P'tites Créa de Claire",
+    "about_story_text": "Nichée à Port-la-Nouvelle dans l'Aude, la boutique L'Atelier des P'tites Créa de Claire est née d'un amour sincère pour la couleur, la lumière méditerranéenne et le travail soigné des mains. Chaque création est pensée pour illuminer votre quotidien d'une touche d'originalité et de douceur.",
+    "contact_phone": "04 68 00 00 00",
+    "contact_email": "contact@lesptitescreadeclaire.com",
+    "contact_address": "Boutique L'Atelier, Port-la-Nouvelle (11210), Aude, France",
+    "instagram_url": "",
+    "facebook_url": "",
+    "tiktok_url": "",
+    "shipping_standard_price": "4.90",
+    "shipping_free_threshold": "60.00",
+    "pickup_enabled": "true",
+    "exceptional_notice": "",
+    "stripe_sim_mode": "true",
+    "contact_postal_code": "11210",
+    "contact_city": "Port-la-Nouvelle"
+  },
+  "users": [],
+  "newsletter": [],
+  "contactMessages": [],
+  "emailLogs": []
+}

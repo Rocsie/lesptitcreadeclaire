@@ -1,68 +1,59 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import { MapPin, Phone, Mail, Clock, Send, CheckCircle2 } from 'lucide-react';
-import { OpeningHour } from '@/lib/store';
+import React from 'react';
+import type { Metadata } from 'next';
+import { MapPin, Phone, Mail, Clock, ExternalLink } from 'lucide-react';
+import ContactForm from './ContactForm';
 import { FloralCorner, FloralDivider, HandDrawnHeart } from '@/components/brand/FloralAccents';
 import OctopusLogo from '@/components/brand/OctopusLogo';
+import JsonLd from '@/components/seo/JsonLd';
+import { buildFaq } from '@/lib/faq';
+import { breadcrumbJsonLd, faqJsonLd, localBusinessJsonLd, pageMetadata } from '@/lib/seo';
+import { store } from '@/lib/store';
 
-export default function ContactPage() {
-  const [hours, setHours] = useState<OpeningHour[]>([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
-    honeypot: '', // anti-spam
-  });
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
+export const metadata: Metadata = pageMetadata({
+  title: 'Contact et horaires | Bijoux artisanaux à Port-la-Nouvelle',
+  absoluteTitle: true,
+  description:
+    "Horaires, adresse et contact de la boutique L'Atelier à Port-la-Nouvelle. Livraison, retrait gratuit, créations sur mesure : les réponses à vos questions.",
+  path: '/contact',
+});
 
-  useEffect(() => {
-    fetch('/api/cms/hours')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setHours(data);
-      })
-      .catch(() => {});
-  }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.honeypot) return; // bot detected
-
-    setLoading(true);
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
-        setSubmitted(true);
-        setFormData({ name: '', email: '', phone: '', subject: '', message: '', honeypot: '' });
-      }
-    } catch {
-      setSubmitted(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function ContactPage() {
+  const [hours, cms, settings] = await Promise.all([
+    store.getOpeningHours(),
+    store.getCmsSettings(),
+    store.getPublicSettings(),
+  ]);
+  const phone = cms.contact_phone?.trim();
+  const email = cms.contact_email?.trim();
+  const address = cms.contact_address?.trim() || "Boutique L'Atelier, 11210 Port-la-Nouvelle";
+  const notice = cms.exceptional_notice?.trim();
+  const faq = buildFaq(settings);
+  const mapQuery = [cms.contact_street, cms.contact_postal_code || '11210', cms.contact_city || 'Port-la-Nouvelle']
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' ');
+  const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`Les P'tites Créa de Claire ${mapQuery}`)}`;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 space-y-16">
+      <JsonLd data={localBusinessJsonLd(cms, hours)} />
+      <JsonLd data={faqJsonLd(faq)} />
+      <JsonLd
+        data={breadcrumbJsonLd([
+          { name: 'Accueil', path: '/' },
+          { name: 'Contact et horaires', path: '/contact' },
+        ])}
+      />
+
       <div className="text-center space-y-3 relative">
-        <FloralCorner position="top-left" className="-top-6 left-0" />
-        <FloralCorner position="top-right" className="-top-6 right-0" />
+        <FloralCorner position="top-left" className="-top-6 left-0 hidden sm:block" />
+        <FloralCorner position="top-right" className="-top-6 right-0 hidden sm:block" />
 
         <OctopusLogo size={52} variant="plum" className="justify-center mx-auto mb-2" />
-        <span className="text-xs font-bold uppercase tracking-widest text-plum">
+        <span className="text-xs font-bold uppercase tracking-widest text-plum block">
           Nous rendre visite ou nous écrire
         </span>
-        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-dark">
-          Contact & Horaires
-        </h1>
+        <h1 className="font-serif text-4xl sm:text-5xl font-bold text-dark">Contact & Horaires</h1>
         <p className="text-sm text-muted max-w-xl mx-auto font-light">
           Une question sur une création, une commande personnalisée ou nos horaires à Port-la-Nouvelle ? Claire vous répond avec plaisir.
         </p>
@@ -70,157 +61,78 @@ export default function ContactPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        {/* Colonne Gauche : Formulaire de contact */}
         <div className="lg:col-span-7 bg-white p-6 sm:p-10 rounded-3xl border border-rose-powder/30 shadow-sm space-y-6">
-          <h2 className="font-serif text-2xl font-bold text-dark">
-            Envoyer un Message à Claire
-          </h2>
-
-          {submitted ? (
-            <div className="p-6 rounded-2xl bg-sage/20 border border-sage/40 text-center space-y-2">
-              <CheckCircle2 className="w-10 h-10 text-sage mx-auto" />
-              <h3 className="font-serif text-lg font-bold text-dark">Message bien reçu !</h3>
-              <p className="text-xs text-muted">
-                Merci beaucoup ! Claire vous répondra par e-mail dans les plus brefs délais.
-              </p>
-              <button
-                onClick={() => setSubmitted(false)}
-                className="mt-3 text-xs font-semibold text-plum hover:underline"
-              >
-                Envoyer un autre message
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Champ pot de miel anti-spam */}
-              <input
-                type="text"
-                name="website"
-                value={formData.honeypot}
-                onChange={(e) => setFormData({ ...formData, honeypot: e.target.value })}
-                className="hidden"
-                tabIndex={-1}
-                autoComplete="off"
-              />
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-dark block mb-1">Nom complet *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Votre nom"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-dark block mb-1">Email *</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="votre@email.fr"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-semibold text-dark block mb-1">Téléphone (facultatif)</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="06 00 00 00 00"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-dark block mb-1">Sujet du message *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.subject}
-                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    placeholder="Ex: Demande de renseignement bijou"
-                    className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-dark block mb-1">Votre message *</label>
-                <textarea
-                  required
-                  rows={5}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  placeholder="Écrivez votre message ici..."
-                  className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-rose-powder/40 focus:outline-none focus:border-plum resize-none"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full min-h-[48px] py-3.5 rounded-full bg-plum hover:bg-plum-dark text-white font-semibold text-xs uppercase tracking-wider active:scale-98 transition-all shadow-md flex items-center justify-center gap-2"
-              >
-                <Send className="w-4 h-4" />
-                <span>{loading ? 'Envoi en cours...' : 'Envoyer mon message'}</span>
-              </button>
-            </form>
-          )}
+          <h2 className="font-serif text-2xl font-bold text-dark">Envoyer un message à Claire</h2>
+          <ContactForm />
         </div>
 
-        {/* Colonne Droite : Coordonnées, Horaires & Plan Port-la-Nouvelle */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Bloc Horaires fidèle au flyer */}
           <div className="p-6 rounded-3xl bg-cream-warm border border-rose-powder/30 space-y-4">
             <div className="flex items-center gap-2 text-plum">
-              <Clock className="w-5 h-5 text-plum" />
-              <h3 className="font-serif text-lg font-bold text-dark">Horaires de la Boutique L&apos;Atelier</h3>
+              <Clock className="w-5 h-5 text-plum" aria-hidden="true" />
+              <h2 className="font-serif text-lg font-bold text-dark">Horaires de la boutique L&apos;Atelier</h2>
             </div>
 
+            {notice && (
+              <p className="p-3 rounded-xl bg-rose-light border border-rose-powder/50 text-xs text-plum font-medium">{notice}</p>
+            )}
+
             <div className="space-y-2 text-xs">
+              {hours.length === 0 && <p className="text-muted">Horaires communiqués à la boutique.</p>}
               {hours.map((h) => (
-                <div key={h.id} className="flex justify-between p-2.5 bg-white rounded-xl border border-rose-powder/20">
+                <div key={h.id} className="flex justify-between gap-3 p-2.5 bg-white rounded-xl border border-rose-powder/20">
                   <span className="font-bold text-plum">{h.dayGroup}</span>
-                  <span className="text-dark font-medium">{h.morningHours} / {h.afternoonHours}</span>
+                  <span className="text-dark font-medium text-right">
+                    {h.isClosed ? 'Fermé' : [h.morningHours, h.afternoonHours].filter(Boolean).join(' / ')}
+                  </span>
                 </div>
               ))}
             </div>
 
             <p className="text-[11px] text-muted italic flex items-center gap-1">
-              <HandDrawnHeart color="gold" size={12} /> Ouvert toute l&apos;année du lundi au dimanche à Port-la-Nouvelle.
+              <HandDrawnHeart color="gold" size={12} /> Retrait gratuit des commandes en boutique pendant ces horaires.
             </p>
           </div>
 
-          {/* Coordonnées directes */}
           <div className="p-6 rounded-3xl bg-white border border-rose-powder/30 space-y-3 text-xs text-dark/80">
-            <h3 className="font-serif text-lg font-bold text-dark mb-2">Coordonnées</h3>
-            <p className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gold shrink-0" />
-              <span>Boutique L&apos;Atelier, 11210 Port-la-Nouvelle (Aude, Occitanie)</span>
-            </p>
-            <p className="flex items-center gap-2">
-              <Phone className="w-4 h-4 text-plum shrink-0" />
-              <span>04 68 00 00 00</span>
-            </p>
-            <p className="flex items-center gap-2">
-              <Mail className="w-4 h-4 text-rose-old shrink-0" />
-              <span>contact@lesptitescreadeclaire.fr</span>
-            </p>
+            <h2 className="font-serif text-lg font-bold text-dark mb-2">Coordonnées</h2>
+            <address className="not-italic space-y-3">
+              <p className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-gold shrink-0" aria-hidden="true" />
+                <span>{address}</span>
+              </p>
+              {phone && (
+                <p className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-plum shrink-0" aria-hidden="true" />
+                  <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-plum transition-colors">
+                    {phone}
+                  </a>
+                </p>
+              )}
+              {email && (
+                <p className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-rose-old shrink-0" aria-hidden="true" />
+                  <a href={`mailto:${email}`} className="hover:text-plum transition-colors break-all">
+                    {email}
+                  </a>
+                </p>
+              )}
+            </address>
+            <a
+              href={mapUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-2 px-4 py-2.5 min-h-[40px] rounded-full bg-rose-light hover:bg-rose-powder/40 text-plum font-semibold transition-colors"
+            >
+              <span>Voir l&apos;itinéraire</span>
+              <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+            </a>
           </div>
 
-          {/* Localisation Port-la-Nouvelle */}
           <div className="p-6 rounded-3xl bg-gradient-to-br from-rose-light to-cream-warm border border-rose-powder/40 space-y-3">
             <div className="flex items-center gap-2 text-plum font-serif text-base font-bold">
-              <MapPin className="w-4 h-4 text-gold" />
-              <span>Port-la-Nouvelle & son Littoral</span>
+              <MapPin className="w-4 h-4 text-gold" aria-hidden="true" />
+              <span>Port-la-Nouvelle & son littoral</span>
             </div>
             <p className="text-xs text-muted leading-relaxed">
               Venez nous rendre visite au bord de l&apos;étang et de la mer ! Vous pourrez retirer gratuitement vos achats web et découvrir en exclusivité les pièces uniques tout juste sorties de l&apos;établi.
@@ -228,6 +140,32 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+
+      {/* Questions fréquentes : mêmes réponses que les données structurées de la page */}
+      <section className="max-w-3xl mx-auto space-y-6" aria-labelledby="faq-titre">
+        <div className="text-center space-y-2">
+          <h2 id="faq-titre" className="font-serif text-3xl font-bold text-dark">
+            Questions fréquentes
+          </h2>
+          <p className="text-sm text-muted">Livraison, retrait à l&apos;atelier, sur-mesure et entretien.</p>
+        </div>
+        <div className="space-y-3">
+          {faq.map((entry) => (
+            <details
+              key={entry.question}
+              className="group rounded-2xl bg-white border border-rose-powder/30 open:shadow-xs transition-shadow"
+            >
+              <summary className="flex items-center justify-between gap-4 cursor-pointer list-none p-4 sm:p-5 text-sm font-semibold text-dark [&::-webkit-details-marker]:hidden">
+                <h3 className="font-semibold">{entry.question}</h3>
+                <span className="text-plum text-lg leading-none shrink-0 transition-transform group-open:rotate-45" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <p className="px-4 sm:px-5 pb-4 sm:pb-5 text-sm text-muted leading-relaxed">{entry.answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

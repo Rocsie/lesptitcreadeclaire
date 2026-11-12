@@ -1,43 +1,45 @@
 import { NextResponse } from 'next/server';
+import { errorResponse, readBody } from '@/lib/api';
+import { clientIp, ensureAdminAccount, rateLimit, startSession, verifyPassword } from '@/lib/auth';
+import { store } from '@/lib/store';
 
 export async function POST(request: Request) {
   try {
-    const { email, password } = await request.json();
-
+    const body = await readBody(request);
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 });
+      return NextResponse.json({ error: 'Email et mot de passe requis.' }, { status: 400 });
     }
 
-    // Compte Claire Administrateur
-    if (email.toLowerCase() === 'admin@lesptitescreadeclaire.fr' && password === 'claire2026!') {
-      return NextResponse.json({
-        user: {
-          id: 'usr-admin',
-          email,
-          firstName: 'Claire',
-          lastName: 'Artisane',
-          role: 'ADMIN',
-          phone: '04 68 00 00 00',
-        },
-      });
+    const ip = await clientIp();
+    if (!rateLimit(`login:${ip}`, 20, 15 * 60_000) || !rateLimit(`login:${email}`, 8, 15 * 60_000)) {
+      return NextResponse.json(
+        { error: 'Trop de tentatives. Merci de patienter quelques minutes avant de réessayer.' },
+        { status: 429 }
+      );
     }
 
-    // Compte Sophie Client
-    if (email.toLowerCase() === 'sophie.martin@example.fr' && password === 'client123!') {
-      return NextResponse.json({
-        user: {
-          id: 'usr-client',
-          email,
-          firstName: 'Sophie',
-          lastName: 'Martin',
-          role: 'CLIENT',
-          phone: '06 12 34 56 78',
-        },
-      });
+    await ensureAdminAccount();
+
+    const stored = await store.getStoredUserByEmail(email);
+    const ok = stored ? await verifyPassword(password, stored.passwordHash) : false;
+    if (!stored || !ok) {
+      return NextResponse.json({ error: 'Email ou mot de passe incorrect.' }, { status: 401 });
     }
 
-    return NextResponse.json({ error: 'Identifiants invalides.' }, { status: 401 });
+    await startSession(stored);
+    return NextResponse.json({
+      user: {
+        id: stored.id,
+        email: stored.email,
+        firstName: stored.firstName,
+        lastName: stored.lastName,
+        phone: stored.phone ?? null,
+        role: stored.role,
+      },
+    });
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur lors de la connexion' }, { status: 500 });
+    return errorResponse(error, 'Erreur lors de la connexion.');
   }
 }

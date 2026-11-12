@@ -1,54 +1,29 @@
-import { NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
-import { existsSync } from 'fs';
 import path from 'path';
+import { MIME_BY_EXT, UPLOAD_DIR, isSafeFileName } from '@/lib/uploads';
 
-const MIME_TYPES: Record<string, string> = {
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-  '.webp': 'image/webp',
-  '.gif': 'image/gif',
-  '.avif': 'image/avif',
-  '.svg': 'image/svg+xml',
-};
+// Sert les photos ajoutées après la mise en production :
+// "next start" ne connaît que les fichiers de public/ présents au moment du build.
+export async function GET(_request: Request, { params }: { params: Promise<{ path: string[] }> }) {
+  const segments = (await params).path || [];
+  const name = segments.length === 1 ? segments[0] : '';
+  const contentType = MIME_BY_EXT[path.extname(name).toLowerCase()];
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ path: string[] }> }
-) {
+  if (!isSafeFileName(name) || !contentType) {
+    return new Response('Not found', { status: 404 });
+  }
+
   try {
-    const resolvedParams = await params;
-    const filePathSegments = resolvedParams.path;
-    if (!filePathSegments || filePathSegments.length === 0) {
-      return new NextResponse('Not found', { status: 404 });
-    }
-
-    const requestedPath = path.join(process.cwd(), 'public', 'uploads', ...filePathSegments);
-
-    // Sécurité: empêcher l'accès hors du dossier uploads
-    const uploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
-    if (!path.resolve(requestedPath).startsWith(uploadsDir)) {
-      return new NextResponse('Access forbidden', { status: 403 });
-    }
-
-    if (!existsSync(requestedPath)) {
-      return new NextResponse('Image not found', { status: 404 });
-    }
-
-    const fileBuffer = await readFile(requestedPath);
-    const ext = path.extname(requestedPath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-    return new Response(fileBuffer, {
+    const file = await readFile(path.join(UPLOAD_DIR, name));
+    return new Response(new Uint8Array(file), {
       status: 200,
       headers: {
         'Content-Type': contentType,
         'Cache-Control': 'public, max-age=31536000, immutable',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
-  } catch (error) {
-    console.error('Erreur lecture upload:', error);
-    return new NextResponse('Internal server error', { status: 500 });
+  } catch {
+    return new Response('Not found', { status: 404 });
   }
 }

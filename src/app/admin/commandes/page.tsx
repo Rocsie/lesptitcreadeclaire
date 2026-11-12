@@ -1,30 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  ShoppingBag,
-  Search,
-  Filter,
-  CheckCircle2,
-  Clock,
-  Truck,
-  RotateCcw,
-  Store,
-  ChevronRight,
-  Eye,
-  FileText,
-  Copy,
-  Check,
-  ExternalLink,
-  Printer,
-  MapPin,
-  Phone,
-  Mail,
-  Package,
-  Calendar,
-  X
-} from 'lucide-react';
-import { Order } from '@/lib/store';
+import { Search, Filter, Truck, Store, Eye, Copy, Check, ExternalLink, Printer, Phone, Mail, Calendar, X } from 'lucide-react';
+import { ORDER_STATUS_LABELS, type Order, type OrderStatus } from '@/lib/types';
+import { apiFetch, formatPrice, withBase } from '@/lib/paths';
+import { escapeHtml } from '@/lib/site';
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -36,14 +16,15 @@ export default function AdminOrdersPage() {
   const [trackingInput, setTrackingInput] = useState<string>('');
   const [isSavingTracking, setIsSavingTracking] = useState<boolean>(false);
   const [trackingSaveSuccess, setTrackingSaveSuccess] = useState<boolean>(false);
+  const [actionError, setActionError] = useState<string>('');
 
   const fetchOrders = () => {
-    fetch('/api/orders')
-      .then((res) => res.json())
+    apiFetch('/api/orders')
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
         if (Array.isArray(data)) setOrders(data);
       })
-      .catch(() => {})
+      .catch(() => setActionError('Les commandes n\'ont pas pu être chargées. Rechargez la page.'))
       .finally(() => setLoading(false));
   };
 
@@ -52,19 +33,33 @@ export default function AdminOrdersPage() {
   }, []);
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    if (
+      (newStatus === 'CANCELLED' || newStatus === 'REFUNDED') &&
+      !confirm(
+        newStatus === 'CANCELLED'
+          ? 'Annuler cette commande ? Les articles seront remis en stock et la cliente prévenue par email.'
+          : 'Marquer cette commande comme remboursée ? Les articles seront remis en stock et la cliente prévenue par email. Le remboursement lui-même se fait dans Stripe.'
+      )
+    ) {
+      return;
+    }
+    setActionError('');
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
+      const res = await apiFetch(`/api/orders/${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         fetchOrders();
-        if (selectedOrder && selectedOrder.id === orderId) {
-          setSelectedOrder({ ...selectedOrder, status: newStatus as any });
-        }
+        if (selectedOrder && selectedOrder.id === orderId) setSelectedOrder(data as Order);
+      } else {
+        setActionError(data.error || 'Le statut n\'a pas pu être modifié.');
       }
-    } catch {}
+    } catch {
+      setActionError('Connexion au serveur impossible : le statut n\'a pas été modifié.');
+    }
   };
 
   const formatColissimoAddress = (order: Order) => {
@@ -89,7 +84,9 @@ export default function AdminOrdersPage() {
         await navigator.clipboard.writeText(text);
         return true;
       }
-    } catch (err) {}
+    } catch {
+      // presse-papier refusé : on tente la méthode de secours ci-dessous
+    }
 
     // Fallback document.execCommand pour contextes non sécurisés (HTTP sur réseau local ou mobile)
     try {
@@ -104,7 +101,7 @@ export default function AdminOrdersPage() {
       const successful = document.execCommand('copy');
       document.body.removeChild(textArea);
       return successful;
-    } catch (err) {
+    } catch {
       return false;
     }
   };
@@ -124,24 +121,30 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const handleSaveTracking = async (orderId: string) => {
+  // Enregistre le numéro de suivi. Avec markShipped, la commande passe aussi en "Expédiée"
+  // et la cliente reçoit l'email d'expédition avec son lien de suivi.
+  const handleSaveTracking = async (orderId: string, markShipped = false) => {
     setIsSavingTracking(true);
     setTrackingSaveSuccess(false);
+    setActionError('');
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
+      const res = await apiFetch(`/api/orders/${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminNotes: trackingInput }),
+        body: JSON.stringify({ trackingNumber: trackingInput, ...(markShipped ? { status: 'SHIPPED' } : {}) }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         fetchOrders();
-        if (selectedOrder && selectedOrder.id === orderId) {
-          setSelectedOrder({ ...selectedOrder, adminNotes: trackingInput });
-        }
+        if (selectedOrder && selectedOrder.id === orderId) setSelectedOrder(data as Order);
         setTrackingSaveSuccess(true);
         setTimeout(() => setTrackingSaveSuccess(false), 3000);
+      } else {
+        setActionError(data.error || 'Le numéro de suivi n\'a pas pu être enregistré.');
       }
-    } catch {}
+    } catch {
+      setActionError('Connexion au serveur impossible : le numéro de suivi n\'a pas été enregistré.');
+    }
     setIsSavingTracking(false);
   };
 
@@ -153,6 +156,7 @@ export default function AdminOrdersPage() {
       return;
     }
     const addr = order.shippingAddress;
+    const e = escapeHtml;
     const recipientName = addr?.name || `${order.customerFirstName} ${order.customerLastName}`;
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -160,7 +164,7 @@ export default function AdminOrdersPage() {
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Bordereau Colissimo - ${order.orderNumber}</title>
+          <title>Bordereau Colissimo ${e(order.orderNumber)}</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 20px; color: #1f2937; line-height: 1.4; margin: 0; }
             .container { border: 2px dashed #cbd5e1; padding: 20px; border-radius: 12px; max-width: 620px; margin: 0 auto; }
@@ -193,23 +197,23 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
               <div class="order-meta">
-                <div class="order-number">${order.orderNumber}</div>
+                <div class="order-number">${e(order.orderNumber)}</div>
                 <div>Date : ${new Date(order.createdAt).toLocaleDateString('fr-FR')}</div>
                 <div>Mode : <strong>Colissimo Suivi</strong></div>
               </div>
             </div>
 
             <div class="box">
-              <div class="box-title">📦 Destinataire du colis (Colissimo)</div>
-              <div class="recipient-name">${recipientName}</div>
+              <div class="box-title">Destinataire du colis (Colissimo)</div>
+              <div class="recipient-name">${e(recipientName)}</div>
               <div class="recipient-address">
-                ${addr?.address1 || ''}<br/>
-                ${addr?.address2 ? addr.address2 + '<br/>' : ''}
-                <strong style="font-size: 16px;">${addr?.postalCode || ''} ${addr?.city || ''}</strong><br/>
-                ${addr?.country || 'France'}
+                ${e(addr?.address1 || '')}<br/>
+                ${addr?.address2 ? e(addr.address2) + '<br/>' : ''}
+                <strong style="font-size: 16px;">${e(addr?.postalCode || '')} ${e(addr?.city || '')}</strong><br/>
+                ${e(addr?.country || 'France')}
               </div>
               <div class="recipient-contact">
-                <strong>Tél :</strong> ${order.customerPhone || 'Non renseigné'} • <strong>Email :</strong> ${order.customerEmail}
+                <strong>Tél :</strong> ${e(order.customerPhone || 'Non renseigné')} • <strong>Email :</strong> ${e(order.customerEmail)}
               </div>
             </div>
 
@@ -225,10 +229,10 @@ export default function AdminOrdersPage() {
               <tbody>
                 ${order.items.map(item => `
                   <tr>
-                    <td><strong>${item.productName}</strong> ${item.variantTitle ? `<br/><span style="color: #6E2D4A; font-size: 11px;">${item.variantTitle}</span>` : ''}</td>
-                    <td style="font-family: monospace; font-size: 11px;">${item.productReference || '-'}</td>
-                    <td style="text-align: center;">${item.quantity}</td>
-                    <td style="text-align: right; font-weight: bold;">${item.totalPrice.toFixed(2)} €</td>
+                    <td><strong>${e(item.productName)}</strong> ${item.variantTitle ? `<br/><span style="color: #6E2D4A; font-size: 11px;">${e(item.variantTitle)}</span>` : ''}</td>
+                    <td style="font-family: monospace; font-size: 11px;">${e(item.productReference || '')}</td>
+                    <td style="text-align: center;">${Number(item.quantity)}</td>
+                    <td style="text-align: right; font-weight: bold;">${e(formatPrice(item.totalPrice))}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -238,36 +242,19 @@ export default function AdminOrdersPage() {
               Merci pour votre commande artisanale • Les P'tites Créa de Claire
             </div>
           </div>
-          <button class="btn-print" onclick="window.print()">🖨️ Imprimer ce bordereau d'expédition</button>
+          <button class="btn-print" onclick="window.print()">Imprimer ce bordereau d'expédition</button>
         </body>
       </html>
     `);
     printWindow.document.close();
   };
 
+  const statusBadges: Record<string, { label: string; color: string }> = ORDER_STATUS_LABELS;
+  const statusKeys = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[];
   const statusOptions = [
     { value: 'ALL', label: 'Tous les statuts' },
-    { value: 'PAID', label: 'Payée' },
-    { value: 'CONFIRMED', label: 'Confirmée' },
-    { value: 'PREPARING', label: 'En préparation' },
-    { value: 'READY_FOR_PICKUP', label: 'Prête à l\'Atelier' },
-    { value: 'SHIPPED', label: 'Expédiée' },
-    { value: 'DELIVERED', label: 'Terminée' },
-    { value: 'CANCELLED', label: 'Annulée' },
-    { value: 'REFUNDED', label: 'Remboursée' },
+    ...statusKeys.map((key) => ({ value: key as string, label: ORDER_STATUS_LABELS[key].label })),
   ];
-
-  const statusBadges: Record<string, { label: string; color: string }> = {
-    PENDING: { label: 'En attente', color: 'bg-amber-100 text-amber-800' },
-    PAID: { label: 'Payée', color: 'bg-blue-100 text-blue-800' },
-    CONFIRMED: { label: 'Confirmée', color: 'bg-indigo-100 text-indigo-800' },
-    PREPARING: { label: 'En préparation', color: 'bg-purple-100 text-purple-800' },
-    READY_FOR_PICKUP: { label: 'Prête au retrait', color: 'bg-emerald-100 text-emerald-800' },
-    SHIPPED: { label: 'Expédiée', color: 'bg-teal-100 text-teal-800' },
-    DELIVERED: { label: 'Terminée', color: 'bg-green-100 text-green-800' },
-    CANCELLED: { label: 'Annulée', color: 'bg-red-100 text-red-800' },
-    REFUNDED: { label: 'Remboursée', color: 'bg-gray-100 text-gray-800' },
-  };
 
   const filteredOrders = orders.filter((o) => {
     if (filterStatus !== 'ALL' && o.status !== filterStatus) return false;
@@ -291,6 +278,13 @@ export default function AdminOrdersPage() {
           Suivez les expéditions Colissimo, gérez les retraits en boutique et visualisez instantanément les adresses de livraison.
         </p>
       </div>
+
+      {actionError && (
+        <p className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700" role="alert">
+          {actionError}
+        </p>
+      )}
+      {loading && <p className="text-xs text-gray-500">Chargement des commandes...</p>}
 
       {/* Barre de filtre et recherche */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl bg-white border border-gray-200 shadow-2xs">
@@ -350,7 +344,7 @@ export default function AdminOrdersPage() {
                   </div>
                   <div className="text-right">
                     <span className="font-serif font-bold text-base text-gray-900 block">
-                      {order.total.toFixed(2)} €
+                      {formatPrice(order.total)}
                     </span>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-0.5 ${badge.color}`}>
                       {badge.label}
@@ -390,7 +384,7 @@ export default function AdminOrdersPage() {
                         </span>
                         {order.shippingAddress && (
                           <span className="text-[11px] font-bold text-blue-900">
-                            📍 {order.shippingAddress.postalCode} {order.shippingAddress.city}
+                            {order.shippingAddress.postalCode} {order.shippingAddress.city}
                           </span>
                         )}
                       </div>
@@ -411,7 +405,7 @@ export default function AdminOrdersPage() {
                         {copiedOrderId === order.id ? (
                           <>
                             <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            <span className="text-emerald-700 font-bold">✓ Adresse copiée !</span>
+                            <span className="text-emerald-700 font-bold">Adresse copiée</span>
                           </>
                         ) : (
                           <>
@@ -427,25 +421,23 @@ export default function AdminOrdersPage() {
                 {/* Changement de statut & Bouton détails */}
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100">
                   <select
+                    aria-label={`Statut de la commande ${order.orderNumber}`}
                     value={order.status}
                     onChange={(e) => handleStatusChange(order.id, e.target.value)}
                     className="w-full py-2.5 px-2 text-[11px] font-bold rounded-xl border border-gray-200 bg-gray-50 text-gray-800"
                   >
-                    <option value="PAID">Payée</option>
-                    <option value="CONFIRMED">Confirmée</option>
-                    <option value="PREPARING">En préparation</option>
-                    <option value="READY_FOR_PICKUP">Prête à l&apos;Atelier</option>
-                    <option value="SHIPPED">Expédiée</option>
-                    <option value="DELIVERED">Terminée</option>
-                    <option value="CANCELLED">Annulée (Restock)</option>
-                    <option value="REFUNDED">Remboursée</option>
+                    {statusKeys.map((key) => (
+                      <option key={key} value={key}>
+                        {ORDER_STATUS_LABELS[key].label}
+                      </option>
+                    ))}
                   </select>
 
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedOrder(order);
-                      setTrackingInput(order.adminNotes || '');
+                      setTrackingInput(order.trackingNumber || '');
                       setTrackingSaveSuccess(false);
                     }}
                     className="w-full py-2.5 px-3 rounded-xl bg-plum hover:bg-plum-dark text-white font-semibold text-xs transition-colors flex items-center justify-center gap-1 shadow-2xs"
@@ -536,29 +528,27 @@ export default function AdminOrdersPage() {
                                 className="text-[11px] text-gray-700 font-medium truncate max-w-[220px]"
                                 title={`${order.shippingAddress.address1 || ''}, ${order.shippingAddress.postalCode || ''} ${order.shippingAddress.city || ''}`}
                               >
-                                📍 {order.shippingAddress.postalCode} {order.shippingAddress.city}
+                                {order.shippingAddress.postalCode} {order.shippingAddress.city}
                               </p>
                             )}
                           </div>
                         )}
                       </td>
                       <td className="p-4 font-serif font-bold text-sm text-gray-900">
-                        {order.total.toFixed(2)} €
+                        {formatPrice(order.total)}
                       </td>
                       <td className="p-4">
                         <select
+                          aria-label={`Statut de la commande ${order.orderNumber}`}
                           value={order.status}
                           onChange={(e) => handleStatusChange(order.id, e.target.value)}
                           className={`text-[11px] font-bold px-2.5 py-1 rounded-full border border-gray-200 cursor-pointer ${badge.color}`}
                         >
-                          <option value="PAID">Payée</option>
-                          <option value="CONFIRMED">Confirmée</option>
-                          <option value="PREPARING">En préparation</option>
-                          <option value="READY_FOR_PICKUP">Prête à l&apos;Atelier</option>
-                          <option value="SHIPPED">Expédiée</option>
-                          <option value="DELIVERED">Terminée</option>
-                          <option value="CANCELLED">Annulée (Restocker)</option>
-                          <option value="REFUNDED">Remboursée</option>
+                          {statusKeys.map((key) => (
+                            <option key={key} value={key}>
+                              {ORDER_STATUS_LABELS[key].label}
+                            </option>
+                          ))}
                         </select>
                       </td>
                       <td className="p-4 text-right">
@@ -566,7 +556,7 @@ export default function AdminOrdersPage() {
                           type="button"
                           onClick={() => {
                             setSelectedOrder(order);
-                            setTrackingInput(order.adminNotes || '');
+                            setTrackingInput(order.trackingNumber || '');
                             setTrackingSaveSuccess(false);
                           }}
                           className="px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-plum hover:text-white text-gray-700 font-semibold text-xs transition-colors"
@@ -645,7 +635,7 @@ export default function AdminOrdersPage() {
                       {copiedOrderId === selectedOrder.id ? (
                         <>
                           <Check className="w-4 h-4 text-emerald-600" />
-                          <span className="text-emerald-700 font-bold">✓ Adresse copiée !</span>
+                          <span className="text-emerald-700 font-bold">Adresse copiée</span>
                         </>
                       ) : (
                         <>
@@ -727,7 +717,7 @@ export default function AdminOrdersPage() {
                       </div>
                       <div className="flex items-center justify-between text-gray-500 text-[11px] pt-1.5 border-t border-gray-100">
                         <span>Frais de port facturés :</span>
-                        <strong className="text-gray-900">{selectedOrder.shippingCost.toFixed(2)} €</strong>
+                        <strong className="text-gray-900">{formatPrice(selectedOrder.shippingCost)}</strong>
                       </div>
                     </div>
                   </div>
@@ -736,7 +726,7 @@ export default function AdminOrdersPage() {
                 {/* Saisie ou mémorisation du numéro de suivi Colissimo */}
                 <div className="pt-2 border-t border-blue-200/60 space-y-2">
                   <label className="text-[11px] font-bold text-blue-950 block">
-                    Numéro de suivi Colissimo (après achat de votre étiquette) :
+                    Numéro de suivi Colissimo (envoyé à la cliente dans l&apos;email d&apos;expédition) :
                   </label>
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                     <input
@@ -754,6 +744,16 @@ export default function AdminOrdersPage() {
                     >
                       {isSavingTracking ? 'Enregistrement...' : 'Enregistrer le n° de suivi'}
                     </button>
+                    {!['SHIPPED', 'DELIVERED', 'CANCELLED', 'REFUNDED', 'PENDING'].includes(selectedOrder.status) && (
+                      <button
+                        type="button"
+                        onClick={() => handleSaveTracking(selectedOrder.id, true)}
+                        disabled={isSavingTracking || !trackingInput.trim()}
+                        className="min-h-[44px] sm:min-h-0 px-4 py-2.5 sm:py-2 rounded-xl bg-teal-700 hover:bg-teal-800 text-white font-semibold text-xs active:scale-95 transition-all whitespace-nowrap disabled:opacity-40"
+                      >
+                        Enregistrer et marquer expédiée
+                      </button>
+                    )}
                     {trackingSaveSuccess && (
                       <span className="text-xs text-emerald-700 font-bold flex items-center gap-1">
                         <Check className="w-3.5 h-3.5" />
@@ -788,7 +788,7 @@ export default function AdminOrdersPage() {
                   <div key={item.id} className="py-2.5 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-3">
                       <img
-                        src={item.imageUrl || '/images/hero-atelier.jpg'}
+                        src={withBase(item.imageUrl || '/images/hero-atelier.jpg')}
                         alt={item.productName}
                         className="w-11 h-11 rounded-lg object-cover border border-gray-200"
                       />
@@ -798,11 +798,11 @@ export default function AdminOrdersPage() {
                           <p className="text-[10px] text-plum">{item.variantTitle}</p>
                         )}
                         <p className="text-[11px] text-gray-500">
-                          {item.quantity} x {item.unitPrice.toFixed(2)} €
+                          {item.quantity} x {formatPrice(item.unitPrice)}
                         </p>
                       </div>
                     </div>
-                    <span className="font-bold text-gray-900">{item.totalPrice.toFixed(2)} €</span>
+                    <span className="font-bold text-gray-900">{formatPrice(item.totalPrice)}</span>
                   </div>
                 ))}
               </div>
@@ -824,18 +824,27 @@ export default function AdminOrdersPage() {
               <div className="space-y-1 sm:text-right">
                 <h4 className="font-bold text-gray-900 mb-1">Montant &amp; Paiement</h4>
                 <p className="text-gray-500">
-                  Sous-total articles : {selectedOrder.subtotal.toFixed(2)} €
+                  Sous-total articles : {formatPrice(selectedOrder.subtotal)}
                 </p>
                 <p className="text-gray-500">
-                  Frais de port : {selectedOrder.shippingCost.toFixed(2)} €
+                  Frais de port : {formatPrice(selectedOrder.shippingCost)}
                 </p>
                 {selectedOrder.discountAmount > 0 && (
                   <p className="text-emerald-700 font-semibold">
-                    Réduction ({selectedOrder.promoCode || 'Code'}) : -{selectedOrder.discountAmount.toFixed(2)} €
+                    Réduction ({selectedOrder.promoCode || 'Code'}) : -{formatPrice(selectedOrder.discountAmount)}
                   </p>
                 )}
                 <p className="font-bold text-plum text-base pt-1 border-t border-gray-200">
-                  Total : {selectedOrder.total.toFixed(2)} €
+                  Total : {formatPrice(selectedOrder.total)}
+                </p>
+                <p className="text-[11px] text-gray-500">
+                  {selectedOrder.paymentMethod === 'stripe'
+                    ? selectedOrder.paymentStatus === 'COMPLETED'
+                      ? 'Payée par carte (Stripe)'
+                      : selectedOrder.paymentStatus === 'REFUNDED'
+                      ? 'Paiement Stripe remboursé'
+                      : 'Paiement par carte non finalisé'
+                    : 'Commande de démonstration, aucun paiement prélevé'}
                 </p>
               </div>
             </div>

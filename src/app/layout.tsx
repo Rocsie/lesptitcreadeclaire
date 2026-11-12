@@ -1,8 +1,30 @@
 import type { Metadata, Viewport } from 'next';
+import { Alex_Brush, Cormorant_Garamond, Plus_Jakarta_Sans } from 'next/font/google';
 import './globals.css';
-import { CartProvider } from '@/context/CartContext';
-import { FavoritesProvider } from '@/context/FavoritesContext';
-import { AuthProvider } from '@/context/AuthContext';
+import Providers from '@/components/Providers';
+import { getSessionUser } from '@/lib/auth';
+import { DEFAULT_SHARE_IMAGE, SITE_NOINDEX } from '@/lib/seo';
+import { SITE_NAME, absoluteUrl } from '@/lib/site';
+import { store } from '@/lib/store';
+
+// Tout le site lit les données de la boutique (produits, textes, réglages) à chaque visite :
+// une modification faite dans l'administration est visible immédiatement, sans reconstruire le site.
+export const dynamic = 'force-dynamic';
+
+const alexBrush = Alex_Brush({ subsets: ['latin'], weight: '400', variable: '--font-alex-brush', display: 'swap' });
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-cormorant',
+  display: 'swap',
+});
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-jakarta',
+  display: 'swap',
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -11,78 +33,65 @@ export const viewport: Viewport = {
   themeColor: '#6E2D4A',
 };
 
+const DESCRIPTION =
+  "Boutique L'Atelier à Port-la-Nouvelle. Bijoux faits main, créations artisanales uniques et petites séries imaginées et réalisées avec passion dans l'Aude.";
+
+// Valeurs par défaut. Chaque page indexable définit les siennes (titre, description,
+// adresse canonique, image de partage) avec pageMetadata() de src/lib/seo.ts.
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL || 'https://lesptitescreadeclaire.fr'),
-  title: "Les P'tites Créa de Claire | Bijoux & Créations artisanales • Port-la-Nouvelle",
-  description: "Boutique L'Atelier à Port-la-Nouvelle. Bijoux faits main, créations artisanales uniques et petites séries étincelantes imaginées et réalisées avec passion dans l'Aude.",
-  keywords: [
-    'bijoux Port-la-Nouvelle',
-    'créatrice bijoux Port-la-Nouvelle',
-    'bijoux artisanaux Port-la-Nouvelle',
-    'créations artisanales Port-la-Nouvelle',
-    'bijoux faits main Aude',
-    'créatrice artisanale Aude',
-    'Les P\'tites Créa de Claire',
-    'Boutique L\'Atelier'
-  ],
+  metadataBase: new URL(absoluteUrl('/')),
+  title: {
+    default: `Bijoux artisanaux à Port-la-Nouvelle | ${SITE_NAME}`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DESCRIPTION,
+  applicationName: SITE_NAME,
   authors: [{ name: 'Claire' }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: 'shopping',
+  formatDetection: { telephone: false },
+  // Démo ou préproduction : SITE_NOINDEX=true empêche toute indexation.
+  robots: SITE_NOINDEX
+    ? { index: false, follow: false }
+    : {
+        index: true,
+        follow: true,
+        googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+      },
+  // Code de validation Google Search Console, à mettre dans GOOGLE_SITE_VERIFICATION.
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
   openGraph: {
-    title: "Les P'tites Créa de Claire • Boutique L'Atelier",
-    description: "Des créations uniques et bijoux artisanaux faits main à Port-la-Nouvelle.",
-    url: 'https://lesptitescreadeclaire.fr',
-    siteName: "Les P'tites Créa de Claire",
+    title: `${SITE_NAME}, bijoux artisanaux à Port-la-Nouvelle`,
+    description: 'Des créations uniques et bijoux artisanaux faits main à Port-la-Nouvelle.',
+    siteName: SITE_NAME,
     images: [
       {
-        url: '/images/hero-atelier.jpg',
+        url: absoluteUrl(DEFAULT_SHARE_IMAGE),
         width: 1200,
         height: 630,
-        alt: 'Les P\'tites Créa de Claire - Bijoux artisanaux à Port-la-Nouvelle',
+        alt: "Les P'tites Créa de Claire, bijoux artisanaux à Port-la-Nouvelle",
       },
     ],
     locale: 'fr_FR',
     type: 'website',
   },
+  twitter: { card: 'summary_large_image' },
 };
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH !== undefined ? process.env.NEXT_PUBLIC_BASE_PATH : '/lpc';
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const [settings, user] = await Promise.all([store.getPublicSettings(), getSessionUser()]);
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
   return (
-    <html lang="fr" className="h-full scroll-smooth" data-scroll-behavior="smooth" suppressHydrationWarning>
-      <head>
-        <link rel="icon" href={`${basePath}/favicon.ico`} sizes="any" />
-        {basePath && (
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                (function() {
-                  var b = ${JSON.stringify(basePath)};
-                  if (!b) return;
-                  var origFetch = window.fetch;
-                  window.fetch = function(url, opts) {
-                    if (typeof url === 'string') {
-                      if (url.startsWith('/api/')) url = b + url;
-                    }
-                    return origFetch.call(this, url, opts);
-                  };
-                })();
-              `
-            }}
-          />
-        )}
-      </head>
-      <body className="min-h-full flex flex-col bg-cream text-dark antialiased" suppressHydrationWarning>
-        <AuthProvider>
-          <FavoritesProvider>
-            <CartProvider>
-              {children}
-            </CartProvider>
-          </FavoritesProvider>
-        </AuthProvider>
+    <html
+      lang="fr"
+      className={`${alexBrush.variable} ${cormorant.variable} ${jakarta.variable} h-full scroll-smooth`}
+      data-scroll-behavior="smooth"
+    >
+      <body className="min-h-full flex flex-col bg-cream text-dark antialiased">
+        <Providers settings={settings} initialUser={user}>
+          {children}
+        </Providers>
       </body>
     </html>
   );

@@ -1,0 +1,45 @@
+# Vérifications automatiques à chaque envoi de code : le site doit se construire
+# et passer tous ses tests avant d'être mis en ligne.
+name: Vérifications
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verifications-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verifications:
+    name: Types, règles de code, build et tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Vérifier les types
+        run: npm run typecheck
+
+      - name: Vérifier les règles de code
+        run: npm run lint
+
+      - name: Construire le site
+        run: npm run build
+
+      - name: Tests de bout en bout
+        run: npm run test:e2e

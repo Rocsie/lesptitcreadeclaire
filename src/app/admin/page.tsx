@@ -2,304 +2,264 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import {
-  TrendingUp,
-  ShoppingBag,
-  Users,
-  CreditCard,
-  AlertTriangle,
-  ArrowUpRight,
-  Clock,
-  CheckCircle2,
-  Package,
-  Eye,
-  Store,
-  Sparkles
-} from 'lucide-react';
-import { Order, Product } from '@/lib/store';
+import { TrendingUp, TrendingDown, ShoppingBag, CreditCard, AlertTriangle, Package } from 'lucide-react';
+import type { AnalyticsReport } from '@/lib/analytics';
+import { apiFetch, formatPrice, withBase } from '@/lib/paths';
+import LaunchChecklist from '@/components/admin/LaunchChecklist';
+import { ORDER_STATUS_LABELS, type Order } from '@/lib/types';
 
 export default function AdminDashboardPage() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [report, setReport] = useState<AnalyticsReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/orders').then((r) => r.json()),
-      fetch('/api/products').then((r) => r.json()),
-      fetch('/api/analytics').then((r) => r.json()),
+      apiFetch('/api/orders').then((r) => (r.ok ? r.json() : Promise.reject())),
+      apiFetch('/api/analytics?days=7').then((r) => (r.ok ? r.json() : Promise.reject())),
     ])
-      .then(([ords, prods, stats]) => {
+      .then(([ords, stats]) => {
         if (Array.isArray(ords)) setOrders(ords);
-        if (Array.isArray(prods)) setProducts(prods);
-        if (stats) setAnalytics(stats);
+        setReport(stats);
       })
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
-  const totalRevenue = orders
-    .filter((o) => o.status !== 'CANCELLED' && o.status !== 'REFUNDED')
-    .reduce((sum, o) => sum + o.total, 0);
+  if (loading) return <p className="text-sm text-gray-500">Chargement du tableau de bord...</p>;
+  if (error || !report) {
+    return (
+      <p className="p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700" role="alert">
+        Les données n&apos;ont pas pu être chargées. Rechargez la page ou reconnectez-vous.
+      </p>
+    );
+  }
 
-  const averageCart = orders.length > 0 ? totalRevenue / orders.length : 0;
-  const lowStockProducts = products.filter((p) => p.stock <= p.lowStockThreshold);
-
-  const statusLabels: Record<string, { label: string; color: string }> = {
-    PENDING: { label: 'En attente', color: 'bg-amber-100 text-amber-800' },
-    PAID: { label: 'Payée', color: 'bg-blue-100 text-blue-800' },
-    CONFIRMED: { label: 'Confirmée', color: 'bg-indigo-100 text-indigo-800' },
-    PREPARING: { label: 'En préparation', color: 'bg-purple-100 text-purple-800' },
-    READY_FOR_PICKUP: { label: 'Prête à l\'Atelier', color: 'bg-emerald-100 text-emerald-800' },
-    SHIPPED: { label: 'Expédiée', color: 'bg-teal-100 text-teal-800' },
-    DELIVERED: { label: 'Terminée', color: 'bg-green-100 text-green-800' },
-    CANCELLED: { label: 'Annulée', color: 'bg-red-100 text-red-800' },
-    REFUNDED: { label: 'Remboursée', color: 'bg-gray-100 text-gray-800' },
-  };
+  const lowStock = report.lowStockProducts;
+  const change = report.revenueChangePercent;
+  const maxRevenue = Math.max(1, ...report.daily.map((d) => d.revenue));
+  const toPrepare = orders.filter((o) => ['PAID', 'CONFIRMED', 'PREPARING'].includes(o.status)).length;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto">
-      {/* En-tête */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 font-serif">Tableau de bord</h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Aperçu des ventes, des commandes et des stocks de l&apos;atelier en temps réel.
-          </p>
+          <p className="text-xs text-gray-500 mt-0.5">Ventes, commandes et stocks de l&apos;atelier.</p>
+        </div>
+        <Link
+          href="/admin/produits"
+          className="px-4 py-2.5 bg-plum hover:bg-plum-dark text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 self-start"
+        >
+          <Package className="w-4 h-4" aria-hidden="true" />
+          <span>Ajouter une création</span>
+        </Link>
+      </div>
+
+      <LaunchChecklist hideWhenDone />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Ventes sur 7 jours</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4" aria-hidden="true" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900 font-serif">{formatPrice(report.totalRevenue)}</div>
+            {change === null ? (
+              <p className="text-[11px] text-gray-500 mt-1">Total depuis l&apos;ouverture : {formatPrice(report.allTime.revenue)}</p>
+            ) : (
+              <p className={`text-[11px] font-medium flex items-center gap-1 mt-1 ${change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                {change >= 0 ? <TrendingUp className="w-3 h-3" aria-hidden="true" /> : <TrendingDown className="w-3 h-3" aria-hidden="true" />}
+                {change >= 0 ? '+' : ''}
+                {change} % par rapport aux 7 jours précédents
+              </p>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Link
-            href="/admin/produits"
-            className="px-4 py-2 bg-plum hover:bg-plum-dark text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
-          >
-            <Package className="w-4 h-4" />
-            <span>Ajouter une création</span>
+        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Commandes à traiter</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <ShoppingBag className="w-4 h-4" aria-hidden="true" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900 font-serif">{toPrepare}</div>
+            <p className="text-[11px] text-gray-500 mt-1">
+              {report.allTime.orders} vente{report.allTime.orders > 1 ? 's' : ''} depuis l&apos;ouverture
+            </p>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Panier moyen</span>
+            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <CreditCard className="w-4 h-4" aria-hidden="true" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900 font-serif">{formatPrice(report.allTime.averageCart)}</div>
+            <p className="text-[11px] text-gray-500 mt-1">Sur toutes les ventes</p>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Stocks faibles</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <AlertTriangle className="w-4 h-4" aria-hidden="true" />
+            </div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-amber-700 font-serif">{lowStock.length}</div>
+            <Link href="/admin/stocks" className="text-[11px] text-amber-800 font-semibold hover:underline block mt-1">
+              Gérer l&apos;inventaire
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-gray-900">Ventes des 7 derniers jours</h2>
+            <span className="text-xs text-gray-500">
+              {report.totalOrders} commande{report.totalOrders > 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div className="h-48 flex items-end justify-between gap-3 pt-6 border-b border-gray-100 pb-2">
+            {report.daily.map((day) => (
+              <div key={day.date} className="flex-1 h-full flex flex-col items-center justify-end gap-2">
+                <div className="text-[10px] font-bold text-plum h-3">{day.revenue > 0 ? formatPrice(day.revenue) : ''}</div>
+                <div
+                  className={`w-full max-w-[36px] rounded-t-lg ${day.revenue > 0 ? 'bg-gradient-to-t from-plum to-rose-old' : 'bg-gray-100'}`}
+                  style={{ height: day.revenue > 0 ? `${Math.max(6, (day.revenue / maxRevenue) * 70)}%` : '3px' }}
+                  title={`${day.orders} commande${day.orders > 1 ? 's' : ''}`}
+                />
+                <span className="text-[11px] font-medium text-gray-500 capitalize">{day.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="lg:col-span-4 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-gray-900">Provenance des visites</h2>
+            <span className="text-xs text-gray-500">7 jours</span>
+          </div>
+          {report.trafficSources.length === 0 ? (
+            <p className="text-xs text-gray-500">
+              Pas encore de visite mesurée sur cette période. Les chiffres se remplissent au fil des passages sur la boutique.
+            </p>
+          ) : (
+            <div className="space-y-3 pt-2">
+              {report.trafficSources.map((src) => (
+                <div key={src.name} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-medium text-gray-700">{src.name}</span>
+                    <span className="font-bold text-gray-900">{src.percent} %</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-plum/80 rounded-full" style={{ width: `${src.percent}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <Link href="/admin/analytics" className="text-xs font-semibold text-plum hover:underline inline-block">
+            Voir les statistiques
           </Link>
         </div>
       </div>
 
-      {/* Cartes KPI (Aujourd'hui, semaine, mois) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Chiffre d'Affaires */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Chiffre d&apos;Affaires
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900 font-serif">
-              {totalRevenue.toFixed(2)} €
-            </div>
-            <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-1">
-              <ArrowUpRight className="w-3 h-3" /> +14.2% ce mois
-            </p>
-          </div>
-        </div>
-
-        {/* Commandes */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Commandes Totales
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-              <ShoppingBag className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900 font-serif">
-              {orders.length}
-            </div>
-            <p className="text-[11px] text-gray-500 mt-1">
-              Dont {orders.filter((o) => o.shippingMethod === 'pickup').length} en retrait à Port-la-Nouvelle
-            </p>
-          </div>
-        </div>
-
-        {/* Panier Moyen */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Panier Moyen
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-              <CreditCard className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-gray-900 font-serif">
-              {averageCart.toFixed(2)} €
-            </div>
-            <p className="text-[11px] text-purple-600 font-medium mt-1">
-              Excellente valeur par client
-            </p>
-          </div>
-        </div>
-
-        {/* Alertes Stocks Faibles */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-              Stocks Faibles (&lt; 3)
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-amber-700 font-serif">
-              {lowStockProducts.length}
-            </div>
-            <Link
-              href="/admin/stocks"
-              className="text-[11px] text-amber-800 font-semibold hover:underline block mt-1"
-            >
-              Gérer l&apos;inventaire →
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Graphique d'évolution des ventes et répartition */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Graphique Ventes Hebdomadaires */}
-        <div className="lg:col-span-8 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-gray-900">Activité des Ventes Récentes</h2>
-            <span className="text-xs text-gray-500">7 derniers jours</span>
-          </div>
-
-          <div className="h-48 flex items-end justify-between gap-3 pt-6 border-b border-gray-100 pb-2">
-            {[
-              { day: 'Lun', height: '40%', val: '63 €' },
-              { day: 'Mar', height: '60%', val: '95 €' },
-              { day: 'Mer', height: '30%', val: '45 €' },
-              { day: 'Jeu', height: '80%', val: '124 €' },
-              { day: 'Ven', height: '55%', val: '88 €' },
-              { day: 'Sam', height: '90%', val: '142 €' },
-              { day: 'Dim', height: '70%', val: '110 €' },
-            ].map((bar, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2 group">
-                <div className="text-[10px] font-bold text-plum opacity-0 group-hover:opacity-100 transition-opacity">
-                  {bar.val}
-                </div>
-                <div
-                  className="w-full max-w-[36px] bg-gradient-to-t from-plum to-rose-old rounded-t-lg transition-all group-hover:brightness-110"
-                  style={{ height: bar.height }}
-                />
-                <span className="text-[11px] font-medium text-gray-500">{bar.day}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Répartition des canaux (Instagram, Google, Direct) */}
-        <div className="lg:col-span-4 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
-          <h2 className="text-sm font-bold text-gray-900">Sources de Trafic</h2>
-          <div className="space-y-3 pt-2">
-            {[
-              { name: 'Instagram', percent: 54, color: 'bg-rose-500' },
-              { name: 'Facebook', percent: 22, color: 'bg-blue-600' },
-              { name: 'Recherche Google', percent: 16, color: 'bg-emerald-500' },
-              { name: 'Direct / Bouche à oreille', percent: 8, color: 'bg-amber-500' },
-            ].map((src, i) => (
-              <div key={i} className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="font-medium text-gray-700">{src.name}</span>
-                  <span className="font-bold text-gray-900">{src.percent}%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className={`h-full ${src.color} rounded-full`} style={{ width: `${src.percent}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Grille inférieure : Dernières commandes & Produits en alerte */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Dernières Commandes */}
         <div className="lg:col-span-8 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-            <h2 className="text-sm font-bold text-gray-900">Dernières Commandes</h2>
+            <h2 className="text-sm font-bold text-gray-900">Dernières commandes</h2>
             <Link href="/admin/commandes" className="text-xs font-semibold text-plum hover:underline">
-              Voir tout ({orders.length}) →
+              Voir tout ({orders.length})
             </Link>
           </div>
 
-          <div className="divide-y divide-gray-100">
-            {orders.slice(0, 4).map((order) => {
-              const status = statusLabels[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-800' };
-              return (
-                <div key={order.id} className="py-3 flex items-center justify-between text-xs">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-gray-900">{order.orderNumber}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${status.color}`}>
-                        {status.label}
-                      </span>
+          {orders.length === 0 ? (
+            <p className="text-xs text-gray-500 py-4">Aucune commande pour le moment.</p>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {orders.slice(0, 5).map((order) => {
+                const status = ORDER_STATUS_LABELS[order.status] || { label: order.status, color: 'bg-gray-100 text-gray-800' };
+                return (
+                  <div key={order.id} className="py-3 flex items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono font-bold text-gray-900">{order.orderNumber}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${status.color}`}>{status.label}</span>
+                      </div>
+                      <p className="text-[11px] text-gray-500 mt-0.5 truncate">
+                        {order.customerFirstName} {order.customerLastName} •{' '}
+                        {order.shippingMethod === 'pickup' ? (
+                          <span className="text-plum font-semibold">Retrait atelier</span>
+                        ) : (
+                          <span className="text-blue-700 font-semibold">
+                            Colissimo {order.shippingAddress?.city ? `(${order.shippingAddress.city})` : ''}
+                          </span>
+                        )}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      {order.customerFirstName} {order.customerLastName} •{' '}
-                      {order.shippingMethod === 'pickup' ? (
-                        <span className="text-plum font-semibold">Retrait atelier</span>
-                      ) : (
-                        <span className="text-blue-700 font-semibold">
-                          Colissimo {order.shippingAddress?.city ? `(${order.shippingAddress.city})` : ''}
-                        </span>
-                      )}
-                    </p>
+                    <div className="text-right shrink-0">
+                      <span className="font-bold text-gray-900 font-serif text-sm">{formatPrice(order.total)}</span>
+                      <p className="text-[10px] text-gray-400">{new Date(order.createdAt).toLocaleDateString('fr-FR')}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="font-bold text-gray-900 font-serif text-sm">
-                      {order.total.toFixed(2)} €
-                    </span>
-                    <p className="text-[10px] text-gray-400">
-                      {new Date(order.createdAt).toLocaleDateString('fr-FR')}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Produits en alerte stock */}
         <div className="lg:col-span-4 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
           <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-            <h2 className="text-sm font-bold text-gray-900">Alertes de Stock</h2>
+            <h2 className="text-sm font-bold text-gray-900">Alertes de stock</h2>
             <Link href="/admin/stocks" className="text-xs font-semibold text-plum hover:underline">
-              Gérer →
+              Gérer
             </Link>
           </div>
 
-          <div className="divide-y divide-gray-100">
-            {lowStockProducts.map((p) => (
-              <div key={p.id} className="py-2.5 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2.5">
-                  <img
-                    src={p.images?.[0]?.url || '/images/hero-atelier.jpg'}
-                    alt={p.name}
-                    className="w-9 h-9 rounded-lg object-cover border border-gray-200"
-                  />
-                  <div>
-                    <p className="font-semibold text-gray-800 truncate max-w-[130px]">{p.name}</p>
-                    <p className="text-[10px] text-gray-400">{p.reference}</p>
+          {lowStock.length === 0 ? (
+            <p className="text-xs text-gray-500 py-2">Tous les stocks sont au-dessus de leur seuil d&apos;alerte.</p>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {lowStock.map((p) => (
+                <div key={p.id} className="py-2.5 flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={withBase(p.images?.[0]?.url || '/images/hero-atelier.jpg')}
+                      alt=""
+                      className="w-9 h-9 rounded-lg object-cover border border-gray-200 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-800 truncate">{p.name}</p>
+                      <p className="text-[10px] text-gray-400">{p.reference}</p>
+                    </div>
                   </div>
+                  <span
+                    className={`px-2 py-0.5 rounded-full font-bold text-[11px] shrink-0 ${
+                      p.stock === 0 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                    }`}
+                  >
+                    {p.stock === 0 ? 'Rupture' : `${p.stock} restant${p.stock > 1 ? 's' : ''}`}
+                  </span>
                 </div>
-                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold text-[11px]">
-                  {p.stock} restant{p.stock > 1 ? 's' : ''}
-                </span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

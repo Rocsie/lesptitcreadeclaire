@@ -1,127 +1,94 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { apiFetch } from '@/lib/paths';
+import type { User } from '@/lib/types';
 
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone?: string;
-  role: 'ADMIN' | 'CLIENT';
-}
+export type { User };
+
+type Result = { success: boolean; error?: string; user?: User };
 
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (data: { email: string; password: string; firstName: string; lastName: string; phone?: string }) => Promise<{ success: boolean; error?: string }>;
-  logout: () => void;
-  updateUser: (data: Partial<User>) => void;
+  login: (email: string, password: string) => Promise<Result>;
+  register: (data: { email: string; password: string; firstName: string; lastName: string; phone?: string }) => Promise<Result>;
+  logout: () => Promise<void>;
+  updateProfile: (data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    currentPassword?: string;
+    newPassword?: string;
+  }) => Promise<Result>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+const NETWORK_ERROR = 'Connexion au serveur impossible. Vérifiez votre connexion internet et réessayez.';
 
+async function send(path: string, method: string, body?: unknown): Promise<Result> {
+  try {
+    const res = await apiFetch(path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.user) return { success: true, user: data.user as User };
+    return { success: false, error: data.error || 'Une erreur est survenue.' };
+  } catch {
+    return { success: false, error: NETWORK_ERROR };
+  }
+}
+
+// La session vit dans un cookie httpOnly posé par le serveur.
+// Le compte connecté est lu côté serveur et fourni dès le premier rendu (initialUser).
+export function AuthProvider({ initialUser, children }: { initialUser: User | null; children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(initialUser);
+
+  // Nettoyage : les anciennes versions du site gardaient le compte dans le navigateur.
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('pcc_user');
-      if (stored) {
-        setUser(JSON.parse(stored));
-      }
-    } catch (e) {}
+      window.localStorage.removeItem('pcc_user');
+    } catch {
+      // stockage indisponible
+    }
   }, []);
 
-  const login = async (email: string, password: string) => {
-    // Authentification via API
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json();
-      if (res.ok && data.user) {
-        setUser(data.user);
-        localStorage.setItem('pcc_user', JSON.stringify(data.user));
-        return { success: true };
-      }
-      return { success: false, error: data.error || 'Identifiants incorrects' };
-    } catch (e) {
-      // Compte démo instantané si le serveur n'est pas encore joignable
-      if (email.toLowerCase() === 'admin@lesptitescreadeclaire.fr' && password === 'claire2026!') {
-        const adminUser: User = { id: 'usr-admin', email, firstName: 'Claire', lastName: 'Artisane', role: 'ADMIN', phone: '04 68 00 00 00' };
-        setUser(adminUser);
-        localStorage.setItem('pcc_user', JSON.stringify(adminUser));
-        return { success: true };
-      }
-      if (email.toLowerCase() === 'sophie.martin@example.fr') {
-        const clientUser: User = { id: 'usr-client', email, firstName: 'Sophie', lastName: 'Martin', role: 'CLIENT', phone: '06 12 34 56 78' };
-        setUser(clientUser);
-        localStorage.setItem('pcc_user', JSON.stringify(clientUser));
-        return { success: true };
-      }
-      return { success: false, error: 'Identifiants invalides.' };
-    }
-  };
+  const login = useCallback(async (email: string, password: string) => {
+    const result = await send('/api/auth/login', 'POST', { email, password });
+    if (result.user) setUser(result.user);
+    return result;
+  }, []);
 
-  const register = async (data: { email: string; password: string; firstName: string; lastName: string; phone?: string }) => {
-    try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const resData = await res.json();
-      if (res.ok && resData.user) {
-        setUser(resData.user);
-        localStorage.setItem('pcc_user', JSON.stringify(resData.user));
-        return { success: true };
-      }
-      return { success: false, error: resData.error || 'Erreur lors de l\'inscription' };
-    } catch (e) {
-      const newUser: User = {
-        id: 'usr-' + Date.now(),
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        phone: data.phone,
-        role: 'CLIENT',
-      };
-      setUser(newUser);
-      localStorage.setItem('pcc_user', JSON.stringify(newUser));
-      return { success: true };
-    }
-  };
+  const register = useCallback<AuthContextType['register']>(async (data) => {
+    const result = await send('/api/auth/register', 'POST', data);
+    if (result.user) setUser(result.user);
+    return result;
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(async () => {
+    try {
+      await apiFetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      // même hors ligne, on efface le compte affiché
+    }
     setUser(null);
-    localStorage.removeItem('pcc_user');
-  };
+  }, []);
 
-  const updateUser = (data: Partial<User>) => {
-    if (!user) return;
-    const updated = { ...user, ...data };
-    setUser(updated);
-    localStorage.setItem('pcc_user', JSON.stringify(updated));
-  };
+  const updateProfile = useCallback<AuthContextType['updateProfile']>(async (data) => {
+    const result = await send('/api/auth/me', 'PUT', data);
+    if (result.user) setUser(result.user);
+    return result;
+  }, []);
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isAdmin: user?.role === 'ADMIN',
-        login,
-        register,
-        logout,
-        updateUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({ user, isAdmin: user?.role === 'ADMIN', login, register, logout, updateProfile }),
+    [user, login, register, logout, updateProfile]
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

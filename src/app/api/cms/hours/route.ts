@@ -1,17 +1,26 @@
 import { NextResponse } from 'next/server';
-import { store } from '@/lib/store';
+import { errorResponse } from '@/lib/api';
+import { requireAdmin } from '@/lib/auth';
+import { StoreError, store } from '@/lib/store';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const hours = await store.getOpeningHours();
-  return NextResponse.json(hours);
+  return NextResponse.json(await store.getOpeningHours());
 }
 
 export async function PUT(request: Request) {
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
   try {
-    const hours = await request.json();
-    const updated = await store.updateOpeningHours(hours);
-    return NextResponse.json(updated);
+    let hours: unknown;
+    try {
+      hours = await request.json();
+    } catch {
+      throw new StoreError('Requête invalide.');
+    }
+    return NextResponse.json(await store.updateOpeningHours(hours));
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur lors de la mise à jour des horaires' }, { status: 500 });
+    return errorResponse(error, 'Erreur lors de la mise à jour des horaires.');
   }
 }

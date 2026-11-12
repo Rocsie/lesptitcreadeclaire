@@ -1,22 +1,22 @@
 import { NextResponse } from 'next/server';
+import { errorResponse, readBody } from '@/lib/api';
+import { requireAdmin } from '@/lib/auth';
 import { store } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
+// Textes et réglages affichés sur le site : lecture publique, écriture réservée à l'administration.
 export async function GET() {
-  const cms = await store.getCmsSettings();
-  return NextResponse.json(cms);
+  return NextResponse.json(await store.getCmsSettings());
 }
 
 export async function PUT(request: Request) {
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
   try {
-    const body = await request.json();
-    for (const [key, value] of Object.entries(body)) {
-      await store.updateCmsSetting(key, String(value));
-    }
-    return NextResponse.json({ success: true });
+    const updated = await store.updateCmsSettings(await readBody(request));
+    return NextResponse.json({ success: true, cms: updated });
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur lors de la mise à jour CMS' }, { status: 500 });
+    return errorResponse(error, 'Erreur lors de la mise à jour des contenus.');
   }
 }

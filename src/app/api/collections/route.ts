@@ -1,53 +1,51 @@
 import { NextResponse } from 'next/server';
+import { errorResponse, readBody } from '@/lib/api';
+import { requireAdmin } from '@/lib/auth';
 import { store } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export async function GET() {
-  const collections = await store.getCollections();
-  return NextResponse.json(collections);
+  return NextResponse.json(await store.getCollections());
 }
 
 export async function POST(request: Request) {
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
   try {
-    const body = await request.json();
-    if (!body.name) {
-      return NextResponse.json({ error: 'Le nom de la collection est requis' }, { status: 400 });
-    }
-    const created = await store.createCollection(body);
+    const created = await store.createCollection(await readBody(request));
     return NextResponse.json(created, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur création collection' }, { status: 500 });
+    return errorResponse(error, 'Erreur lors de la création de la collection.');
   }
 }
 
 export async function PUT(request: Request) {
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
   try {
-    const body = await request.json();
-    if (!body.id) {
-      return NextResponse.json({ error: 'ID requis' }, { status: 400 });
+    const body = await readBody(request);
+    if (typeof body.id !== 'string' || !body.id) {
+      return NextResponse.json({ error: 'Identifiant requis.' }, { status: 400 });
     }
     const updated = await store.updateCollection(body.id, body);
-    if (!updated) {
-      return NextResponse.json({ error: 'Collection introuvable' }, { status: 404 });
-    }
+    if (!updated) return NextResponse.json({ error: 'Collection introuvable.' }, { status: 404 });
     return NextResponse.json(updated);
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur mise à jour collection' }, { status: 500 });
+    return errorResponse(error, 'Erreur lors de la mise à jour de la collection.');
   }
 }
 
 export async function DELETE(request: Request) {
+  const admin = await requireAdmin();
+  if (admin instanceof NextResponse) return admin;
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    if (!id) {
-      return NextResponse.json({ error: 'ID manquant' }, { status: 400 });
-    }
+    const id = new URL(request.url).searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'Identifiant manquant.' }, { status: 400 });
     const deleted = await store.deleteCollection(id);
-    return NextResponse.json({ success: deleted });
+    if (!deleted) return NextResponse.json({ error: 'Collection introuvable.' }, { status: 404 });
+    return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: 'Erreur suppression collection' }, { status: 500 });
+    return errorResponse(error, 'Erreur lors de la suppression de la collection.');
   }
 }

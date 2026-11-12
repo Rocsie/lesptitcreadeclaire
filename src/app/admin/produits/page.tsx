@@ -1,25 +1,16 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import {
-  Package,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
-  X,
-  Upload,
-  Image as ImageIcon,
-  Star,
-  Loader2,
-  Link as LinkIcon,
-  Eye,
-  Check
-} from 'lucide-react';
-import { Product, Category, Collection } from '@/lib/store';
+import { Plus, Search, Edit, Trash2, Sparkles, X, Upload, Image as ImageIcon, Star, Loader2, Link as LinkIcon, Eye, Check } from 'lucide-react';
+import type { Product, Category, Collection } from '@/lib/types';
+import { apiFetch, formatPrice, withBase } from '@/lib/paths';
+
+const STATUS_LABELS: Record<Product['status'], { label: string; color: string }> = {
+  PUBLISHED: { label: 'En ligne', color: 'bg-emerald-50 text-emerald-700' },
+  DRAFT: { label: 'Brouillon', color: 'bg-gray-100 text-gray-600' },
+  HIDDEN: { label: 'Masqué', color: 'bg-gray-100 text-gray-600' },
+  SOLD_OUT: { label: 'Épuisé', color: 'bg-red-50 text-red-700' },
+};
 
 const ATELIER_PRESETS = [
   { label: "Boucles d'oreilles pivoine", url: "/images/boucles-oreilles.jpg" },
@@ -48,6 +39,9 @@ export default function AdminProductsPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [customUrlInput, setCustomUrlInput] = useState('');
   const [showPresets, setShowPresets] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -61,6 +55,7 @@ export default function AdminProductsPage() {
     lowStockThreshold: 3,
     status: 'PUBLISHED' as Product['status'],
     isUniquePiece: false,
+    isNew: true,
     badgeText: 'Nouveauté',
     materials: 'Résine, laiton doré à l\'or fin, sans nickel.',
     dimensions: 'Hauteur : 4,5 cm',
@@ -70,17 +65,19 @@ export default function AdminProductsPage() {
 
   const fetchAll = () => {
     Promise.all([
-      fetch('/api/products').then((r) => r.json()),
-      fetch('/api/categories').then((r) => r.json()),
-      fetch('/api/collections').then((r) => r.json()),
-      fetch('/api/upload').then((r) => r.json()).catch(() => ({ files: [] })),
+      apiFetch('/api/products?scope=admin').then((r) => r.json()),
+      apiFetch('/api/categories').then((r) => r.json()),
+      apiFetch('/api/collections').then((r) => r.json()),
+      apiFetch('/api/upload').then((r) => r.json()).catch(() => ({ files: [] })),
     ])
       .then(([prods, cats, cols, uploads]) => {
         if (Array.isArray(prods)) setProducts(prods);
         if (Array.isArray(cats)) setCategories(cats);
         if (Array.isArray(cols)) setCollections(cols);
         if (uploads && Array.isArray(uploads.files)) setUploadedGallery(uploads.files);
+        setListError(Array.isArray(prods) ? null : 'Les produits n\'ont pas pu être chargés. Rechargez la page.');
       })
+      .catch(() => setListError('Les produits n\'ont pas pu être chargés. Rechargez la page.'))
       .finally(() => setLoading(false));
   };
 
@@ -90,7 +87,8 @@ export default function AdminProductsPage() {
 
   const openCreateModal = () => {
     setEditingProduct(null);
-    setImagesList(['/images/boucles-oreilles.jpg']);
+    setImagesList([]);
+    setSaveError(null);
     setUploadError(null);
     setCustomUrlInput('');
     setShowPresets(false);
@@ -106,6 +104,7 @@ export default function AdminProductsPage() {
       lowStockThreshold: 3,
       status: 'PUBLISHED',
       isUniquePiece: false,
+      isNew: true,
       badgeText: 'Fait main',
       materials: '',
       dimensions: '',
@@ -121,6 +120,7 @@ export default function AdminProductsPage() {
       ? p.images.map((img) => img.url)
       : ['/images/hero-atelier.jpg'];
     setImagesList(existingImgs);
+    setSaveError(null);
     setUploadError(null);
     setCustomUrlInput('');
     setShowPresets(false);
@@ -136,6 +136,7 @@ export default function AdminProductsPage() {
       lowStockThreshold: p.lowStockThreshold,
       status: p.status,
       isUniquePiece: p.isUniquePiece,
+      isNew: p.isNew,
       badgeText: p.badgeText || '',
       materials: p.materials || '',
       dimensions: p.dimensions || '',
@@ -158,7 +159,7 @@ export default function AdminProductsPage() {
     }
 
     try {
-      const res = await fetch('/api/upload', {
+      const res = await apiFetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
@@ -167,11 +168,15 @@ export default function AdminProductsPage() {
       if (!res.ok) {
         setUploadError(data.error || 'Erreur lors du téléchargement');
       } else {
-        const uploaded = data.urls || (data.url ? [data.url] : []);
+        const uploaded: string[] = data.urls || (data.url ? [data.url] : []);
         setImagesList((prev) => [...prev, ...uploaded]);
+        setUploadedGallery((prev) => [
+          ...uploaded.map((url) => ({ name: url.split('/').pop() || url, url })),
+          ...prev,
+        ]);
       }
-    } catch (err: any) {
-      setUploadError(err.message || 'Erreur de connexion au serveur');
+    } catch {
+      setUploadError("Connexion au serveur impossible : la photo n'a pas été envoyée.");
     } finally {
       setIsUploading(false);
     }
@@ -185,10 +190,14 @@ export default function AdminProductsPage() {
   };
 
 
-  const handleAddCustomUrl = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customUrlInput.trim()) return;
-    setImagesList((prev) => [...prev, customUrlInput.trim()]);
+  const handleAddCustomUrl = () => {
+    const url = customUrlInput.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) {
+      setUploadError('L\'adresse de l\'image doit commencer par https://');
+      return;
+    }
+    setImagesList((prev) => [...prev, url]);
     setCustomUrlInput('');
   };
 
@@ -215,37 +224,47 @@ export default function AdminProductsPage() {
     e.preventDefault();
 
     const finalImages = imagesList.length > 0
-      ? imagesList.map((url, idx) => ({ url, altText: `${form.name} - Photo ${idx + 1}` }))
+      ? imagesList.map((url, idx) => ({ url, altText: idx === 0 ? form.name.trim() : `${form.name.trim()}, vue ${idx + 1}` }))
       : [{ url: '/images/hero-atelier.jpg', altText: form.name }];
 
-    const payload = {
-      ...form,
-      slug: form.slug || form.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-      images: finalImages,
-    };
+    // L'adresse de la fiche (slug) est créée par le serveur à partir du nom, sans accent ni doublon.
+    const { slug: _unusedSlug, ...fields } = form;
+    void _unusedSlug;
+    const payload = { ...fields, images: finalImages };
 
-    if (editingProduct) {
-      await fetch(`/api/products/${editingProduct.slug}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payload, id: editingProduct.id }),
-      });
-    } else {
-      await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = editingProduct
+        ? await apiFetch(`/api/products/${editingProduct.slug}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...payload, id: editingProduct.id }),
+          })
+        : await apiFetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError(data.error || 'La création n\'a pas pu être enregistrée.');
+        return;
+      }
+      setIsModalOpen(false);
+      fetchAll();
+    } catch {
+      setSaveError('Connexion au serveur impossible : rien n\'a été enregistré.');
+    } finally {
+      setSaving(false);
     }
-
-    setIsModalOpen(false);
-    fetchAll();
   };
 
 
   const handleDeleteProduct = async (id: string) => {
-    if (confirm('Voulez-vous vraiment supprimer cette création ?')) {
-      await fetch(`/api/products/${id}`, { method: 'DELETE' });
+    if (confirm('Supprimer définitivement cette création ? Les commandes déjà passées restent intactes.')) {
+      const res = await apiFetch(`/api/products/${id}`, { method: 'DELETE' }).catch(() => null);
+      if (!res || !res.ok) setListError('La suppression a échoué. Rechargez la page et réessayez.');
       fetchAll();
     }
   };
@@ -289,6 +308,17 @@ export default function AdminProductsPage() {
         </div>
       </div>
 
+      {listError && (
+        <p className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700" role="alert">
+          {listError}
+        </p>
+      )}
+      {!loading && !listError && filteredProducts.length === 0 && (
+        <p className="p-8 text-center bg-white rounded-2xl border border-gray-200 text-gray-500 text-xs">
+          {search.trim() ? 'Aucune création ne correspond à cette recherche.' : 'Aucune création pour le moment. Ajoutez la première avec le bouton ci-dessus.'}
+        </p>
+      )}
+
       {/* Table des produits */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
@@ -310,7 +340,7 @@ export default function AdminProductsPage() {
                   <td className="p-4">
                     <div className="flex items-center gap-3">
                       <img
-                        src={p.images?.[0]?.url || '/images/hero-atelier.jpg'}
+                        src={withBase(p.images?.[0]?.url || '/images/hero-atelier.jpg')}
                         alt={p.name}
                         className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                       />
@@ -322,7 +352,7 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="p-4 font-mono font-bold text-gray-700">{p.reference}</td>
                   <td className="p-4 font-serif font-bold text-sm text-gray-900">
-                    {p.price.toFixed(2)} €
+                    {formatPrice(p.price)}
                   </td>
                   <td className="p-4">
                     <span
@@ -345,17 +375,27 @@ export default function AdminProductsPage() {
                     )}
                   </td>
                   <td className="p-4">
-                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700">
-                      {p.status}
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${STATUS_LABELS[p.status]?.color || 'bg-gray-100 text-gray-600'}`}>
+                      {STATUS_LABELS[p.status]?.label || p.status}
                     </span>
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
+                      <a
+                        href={withBase(`/produit/${p.slug}`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-8 h-8 rounded-lg text-gray-600 hover:text-plum hover:bg-gray-100 active:bg-gray-200 flex items-center justify-center transition-all"
+                        aria-label={`Voir ${p.name} sur la boutique`}
+                        title="Voir sur la boutique"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </a>
                       <button
                         type="button"
                         onClick={() => openEditModal(p)}
                         className="w-8 h-8 rounded-lg text-gray-600 hover:text-plum hover:bg-gray-100 active:bg-gray-200 flex items-center justify-center transition-all"
-                        aria-label="Modifier"
+                        aria-label={`Modifier ${p.name}`}
                       >
                         <Edit className="w-4 h-4" />
                       </button>
@@ -363,7 +403,7 @@ export default function AdminProductsPage() {
                         type="button"
                         onClick={() => handleDeleteProduct(p.id)}
                         className="w-8 h-8 rounded-lg text-gray-600 hover:text-red-600 hover:bg-red-50 active:bg-red-100 flex items-center justify-center transition-all"
-                        aria-label="Supprimer"
+                        aria-label={`Supprimer ${p.name}`}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -423,7 +463,8 @@ export default function AdminProductsPage() {
                   <label className="font-semibold block mb-1">Prix (€) *</label>
                   <input
                     type="number"
-                    step="0.5"
+                    step="0.01"
+                    min="0"
                     required
                     value={form.price}
                     onChange={(e) => setForm({ ...form, price: Number(e.target.value) })}
@@ -434,7 +475,8 @@ export default function AdminProductsPage() {
                   <label className="font-semibold block mb-1">Prix barré (€)</label>
                   <input
                     type="number"
-                    step="0.5"
+                    step="0.01"
+                    min="0"
                     value={form.compareAtPrice}
                     onChange={(e) => setForm({ ...form, compareAtPrice: Number(e.target.value) })}
                     className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
@@ -444,12 +486,73 @@ export default function AdminProductsPage() {
                   <label className="font-semibold block mb-1">Stock disponible</label>
                   <input
                     type="number"
+                    min="0"
+                    step="1"
                     required
                     value={form.stock}
                     onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
                     className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div>
+                  <label htmlFor="prod-category" className="font-semibold block mb-1">Rayon</label>
+                  <select
+                    id="prod-category"
+                    value={form.categoryId}
+                    onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+                    className="w-full px-3 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-plum"
+                  >
+                    <option value="">Sans rayon</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="prod-collection" className="font-semibold block mb-1">Collection</label>
+                  <select
+                    id="prod-collection"
+                    value={form.collectionId}
+                    onChange={(e) => setForm({ ...form, collectionId: e.target.value })}
+                    className="w-full px-3 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 bg-white focus:outline-none focus:border-plum"
+                  >
+                    <option value="">Sans collection</option>
+                    {collections.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="prod-threshold" className="font-semibold block mb-1">Alerte stock faible à</label>
+                  <input
+                    id="prod-threshold"
+                    type="number"
+                    min="0"
+                    value={form.lowStockThreshold}
+                    onChange={(e) => setForm({ ...form, lowStockThreshold: Number(e.target.value) })}
+                    className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="prod-badge" className="font-semibold block mb-1">Étiquette sur la photo (facultatif)</label>
+                <input
+                  id="prod-badge"
+                  type="text"
+                  maxLength={40}
+                  placeholder="Ex : Coup de cœur, Petite série"
+                  value={form.badgeText}
+                  onChange={(e) => setForm({ ...form, badgeText: e.target.value })}
+                  className="w-full px-3.5 py-2.5 sm:py-2 text-sm sm:text-xs rounded-xl border border-gray-200 focus:outline-none focus:border-plum"
+                />
               </div>
 
               {/* Gestion avancée des photos du produit */}
@@ -563,7 +666,7 @@ export default function AdminProductsPage() {
                             }`}
                             title={file.name}
                           >
-                            <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                            <img src={withBase(file.url)} alt={file.name} className="w-full h-full object-cover" />
                             {isSelected && (
                               <span className="absolute inset-0 bg-plum/40 flex items-center justify-center text-white">
                                 <Check className="w-5 h-5 drop-shadow" />
@@ -588,7 +691,7 @@ export default function AdminProductsPage() {
                           onClick={() => handleAddPresetImage(preset.url)}
                           className="flex items-center gap-2 p-1.5 rounded-lg border border-gray-200 hover:border-plum text-left bg-gray-50/50 hover:bg-rose-powder/10 transition-all text-[11px]"
                         >
-                          <img src={preset.url} alt={preset.label} className="w-7 h-7 rounded-md object-cover" />
+                          <img src={withBase(preset.url)} alt={preset.label} className="w-7 h-7 rounded-md object-cover" />
                           <span className="truncate">{preset.label}</span>
                         </button>
                       ))}
@@ -633,7 +736,7 @@ export default function AdminProductsPage() {
                           }`}
                         >
                           <img
-                            src={imgUrl}
+                            src={withBase(imgUrl)}
                             alt={`Photo ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />
@@ -676,7 +779,7 @@ export default function AdminProductsPage() {
                   </div>
                 ) : (
                   <div className="p-3 text-center rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs">
-                    ⚠️ Aucune photo sélectionnée. Ajoutez au moins une photo pour mettre en valeur votre création.
+                    Aucune photo sélectionnée. Ajoutez au moins une photo pour mettre en valeur votre création.
                   </div>
                 )}
               </div>
@@ -723,7 +826,7 @@ export default function AdminProductsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-6 pt-2">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3 pt-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -734,11 +837,21 @@ export default function AdminProductsPage() {
                   <span className="font-semibold">Pièce unique</span>
                 </label>
 
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.isNew}
+                    onChange={(e) => setForm({ ...form, isNew: e.target.checked })}
+                    className="rounded text-plum"
+                  />
+                  <span className="font-semibold">Nouveauté</span>
+                </label>
+
                 <div className="flex items-center gap-2">
                   <span className="font-semibold">Statut :</span>
                   <select
                     value={form.status}
-                    onChange={(e) => setForm({ ...form, status: e.target.value as any })}
+                    onChange={(e) => setForm({ ...form, status: e.target.value as Product['status'] })}
                     className="px-2 py-1 rounded-lg border border-gray-200"
                   >
                     <option value="PUBLISHED">En ligne</option>
@@ -748,6 +861,12 @@ export default function AdminProductsPage() {
                   </select>
                 </div>
               </div>
+
+              {saveError && (
+                <p className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700" role="alert">
+                  {saveError}
+                </p>
+              )}
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <button
@@ -759,9 +878,10 @@ export default function AdminProductsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-full bg-plum text-white font-semibold hover:bg-plum-dark"
+                  disabled={saving || isUploading}
+                  className="px-6 py-2.5 rounded-full bg-plum text-white font-semibold hover:bg-plum-dark disabled:opacity-50"
                 >
-                  Enregistrer
+                  {saving ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>
             </form>

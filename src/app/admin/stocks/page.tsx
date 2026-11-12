@@ -1,21 +1,24 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Plus, Minus, Search, CheckCircle2 } from 'lucide-react';
-import { Product } from '@/lib/store';
+import { AlertTriangle, Plus, Minus, Search } from 'lucide-react';
+import type { Product } from '@/lib/types';
+import { apiFetch, withBase } from '@/lib/paths';
 
 export default function AdminStocksPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [filterLow, setFilterLow] = useState(false);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const fetchProducts = () => {
-    fetch('/api/products')
-      .then((res) => res.json())
+    apiFetch('/api/products?scope=admin')
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
         if (Array.isArray(data)) setProducts(data);
       })
+      .catch(() => setError('Les stocks n\'ont pas pu être chargés. Rechargez la page.'))
       .finally(() => setLoading(false));
   };
 
@@ -23,16 +26,21 @@ export default function AdminStocksPage() {
     fetchProducts();
   }, []);
 
+  // Seul le stock est envoyé : le reste de la fiche n'est pas réécrit.
   const handleUpdateStock = async (p: Product, newStock: number) => {
     if (newStock < 0) return;
+    setError('');
     try {
-      await fetch(`/api/products/${p.slug}`, {
+      const res = await apiFetch(`/api/products/${p.slug}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...p, stock: newStock }),
+        body: JSON.stringify({ id: p.id, stock: newStock }),
       });
-      fetchProducts();
-    } catch {}
+      if (!res.ok) setError("Le stock n'a pas pu être modifié. Rechargez la page et réessayez.");
+    } catch {
+      setError("Connexion au serveur impossible : le stock n'a pas été modifié.");
+    }
+    fetchProducts();
   };
 
   const filtered = products.filter((p) => {
@@ -67,6 +75,27 @@ export default function AdminStocksPage() {
         </button>
       </div>
 
+      <div className="p-4 rounded-2xl bg-white border border-gray-200">
+        <div className="relative max-w-md">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true" />
+          <input
+            type="search"
+            aria-label="Rechercher une création"
+            placeholder="Rechercher par nom ou référence..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:border-plum"
+          />
+        </div>
+      </div>
+
+      {error && (
+        <p className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700" role="alert">
+          {error}
+        </p>
+      )}
+      {loading && <p className="text-xs text-gray-500">Chargement des stocks...</p>}
+
       {/* 1. Vue Mobile (Cartes adaptées au tactile sur smartphones) */}
       <div className="block md:hidden space-y-3">
         {filtered.length === 0 ? (
@@ -84,7 +113,7 @@ export default function AdminStocksPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src={p.images?.[0]?.url || '/images/hero-atelier.jpg'}
+                      src={withBase(p.images?.[0]?.url || '/images/hero-atelier.jpg')}
                       alt={p.name}
                       className="w-12 h-12 rounded-xl object-cover border border-gray-200 shrink-0"
                     />
@@ -161,7 +190,7 @@ export default function AdminStocksPage() {
                     <td className="p-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={p.images?.[0]?.url || '/images/hero-atelier.jpg'}
+                          src={withBase(p.images?.[0]?.url || '/images/hero-atelier.jpg')}
                           alt={p.name}
                           className="w-10 h-10 rounded-lg object-cover border border-gray-200"
                         />
@@ -188,6 +217,7 @@ export default function AdminStocksPage() {
                         <button
                           type="button"
                           onClick={() => handleUpdateStock(p, p.stock - 1)}
+                          aria-label={`Retirer une unité de ${p.name}`}
                           className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 active:scale-95 flex items-center justify-center font-bold text-gray-700 transition-all"
                         >
                           <Minus className="w-3.5 h-3.5" />
@@ -196,6 +226,7 @@ export default function AdminStocksPage() {
                         <button
                           type="button"
                           onClick={() => handleUpdateStock(p, p.stock + 1)}
+                          aria-label={`Ajouter une unité de ${p.name}`}
                           className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 active:scale-95 flex items-center justify-center font-bold text-gray-700 transition-all"
                         >
                           <Plus className="w-3.5 h-3.5" />

@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Tag, Plus, CheckCircle2, Edit2, Trash2, X, AlertCircle } from 'lucide-react';
-import { Coupon } from '@/lib/store';
+import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import type { Coupon } from '@/lib/types';
+import { apiFetch } from '@/lib/paths';
 
 export default function AdminPromosPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -23,8 +24,7 @@ export default function AdminPromosPage() {
   });
 
   const fetchCoupons = () => {
-    setLoading(true);
-    fetch('/api/promos')
+    apiFetch('/api/promos')
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setCoupons(data);
@@ -79,30 +79,27 @@ export default function AdminPromosPage() {
         isActive: form.isActive,
       };
 
-      if (editingCoupon) {
-        await fetch('/api/promos', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...payload, id: editingCoupon.id }),
-        });
-      } else {
-        await fetch('/api/promos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
+      const res = await apiFetch('/api/promos', {
+        method: editingCoupon ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingCoupon ? { ...payload, id: editingCoupon.id, maxUses: payload.maxUses ?? null } : payload),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Le code promo n'a pas pu être enregistré.");
+        return;
       }
       setIsModalOpen(false);
       fetchCoupons();
-    } catch (err) {
-      alert('Erreur lors de l\'enregistrement du code promo');
+    } catch {
+      alert("Connexion au serveur impossible : le code promo n'a pas été enregistré.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleToggleActive = async (c: Coupon) => {
-    await fetch('/api/promos', {
+    await apiFetch('/api/promos', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id: c.id, isActive: !c.isActive }),
@@ -112,7 +109,7 @@ export default function AdminPromosPage() {
 
   const handleDelete = async (id: string, code: string) => {
     if (confirm(`Voulez-vous vraiment supprimer le code promo "${code}" ?`)) {
-      await fetch(`/api/promos?id=${id}`, { method: 'DELETE' });
+      await apiFetch(`/api/promos?id=${id}`, { method: 'DELETE' });
       fetchCoupons();
     }
   };
@@ -134,6 +131,8 @@ export default function AdminPromosPage() {
           <span>Créer un code promo</span>
         </button>
       </div>
+
+      {loading && <p className="text-xs text-gray-500">Chargement des codes promo...</p>}
 
       {/* Vue Mobile (Cartes adaptées au tactile) */}
       <div className="block md:hidden space-y-3.5">
@@ -339,7 +338,7 @@ export default function AdminPromosPage() {
                   <label className="font-semibold block mb-1">Type de réduction</label>
                   <select
                     value={form.discountType}
-                    onChange={(e) => setForm({ ...form, discountType: e.target.value as any })}
+                    onChange={(e) => setForm({ ...form, discountType: e.target.value as Coupon['discountType'] })}
                     className="w-full px-3 py-2.5 rounded-xl border border-gray-200 font-medium bg-white"
                   >
                     <option value="PERCENTAGE">Pourcentage (%)</option>

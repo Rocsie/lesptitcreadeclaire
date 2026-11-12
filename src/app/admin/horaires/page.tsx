@@ -2,24 +2,30 @@
 
 import React, { useState, useEffect } from 'react';
 import { Clock, Save, CheckCircle2, AlertCircle } from 'lucide-react';
-import { OpeningHour } from '@/lib/store';
+import type { OpeningHour } from '@/lib/types';
+import { apiFetch } from '@/lib/paths';
 
 export default function AdminHoursPage() {
   const [hours, setHours] = useState<OpeningHour[]>([]);
-  const [exceptionalNotice, setExceptionalNotice] = useState('Ouverture exceptionnelle ce week-end pour le marché de l\'artisanat !');
+  const [exceptionalNotice, setExceptionalNotice] = useState('');
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/cms/hours')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data)) setHours(data);
+    Promise.all([
+      apiFetch('/api/cms/hours').then((res) => (res.ok ? res.json() : Promise.reject())),
+      apiFetch('/api/cms').then((res) => (res.ok ? res.json() : Promise.reject())),
+    ])
+      .then(([hoursData, cms]) => {
+        if (Array.isArray(hoursData)) setHours(hoursData);
+        setExceptionalNotice(cms?.exceptional_notice || '');
       })
+      .catch(() => setError('Les horaires n\'ont pas pu être chargés. Rechargez la page.'))
       .finally(() => setLoading(false));
   }, []);
 
-  const handleHourChange = (id: string, field: keyof OpeningHour, value: any) => {
+  const handleHourChange = (id: string, field: keyof OpeningHour, value: string | boolean) => {
     setHours((prev) =>
       prev.map((h) => (h.id === id ? { ...h, [field]: value } : h))
     );
@@ -28,13 +34,29 @@ export default function AdminHoursPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaved(false);
-    await fetch('/api/cms/hours', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(hours),
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setError('');
+    try {
+      const [hoursRes, noticeRes] = await Promise.all([
+        apiFetch('/api/cms/hours', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(hours),
+        }),
+        apiFetch('/api/cms', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ exceptional_notice: exceptionalNotice }),
+        }),
+      ]);
+      if (!hoursRes.ok || !noticeRes.ok) {
+        setError("Les horaires n'ont pas pu être enregistrés. Réessayez.");
+        return;
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setError("Connexion au serveur impossible : rien n'a été enregistré.");
+    }
   };
 
   if (loading) return <div className="text-sm text-gray-500">Chargement des horaires...</div>;
@@ -45,7 +67,7 @@ export default function AdminHoursPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 font-serif">Horaires de l&apos;Atelier</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Gérez les plages d&apos;ouverture affichées sur les pages et flyers en direct.
+            Horaires affichés sur la page d&apos;accueil, la page contact et le pied de page.
           </p>
         </div>
 
@@ -56,6 +78,12 @@ export default function AdminHoursPage() {
           </div>
         )}
       </div>
+
+      {error && (
+        <p className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700" role="alert">
+          {error}
+        </p>
+      )}
 
       <form onSubmit={handleSave} className="space-y-6 text-xs">
         <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
@@ -118,13 +146,19 @@ export default function AdminHoursPage() {
             <span>Fermetures Exceptionnelles & Vacances</span>
           </h2>
           <div>
-            <label className="font-semibold block mb-1">Message d&apos;information public</label>
+            <label htmlFor="hours-notice" className="font-semibold block mb-1">Message d&apos;information public</label>
             <input
+              id="hours-notice"
               type="text"
+              maxLength={300}
+              placeholder="Ex : Fermeture exceptionnelle du 24 au 26 décembre"
               value={exceptionalNotice}
               onChange={(e) => setExceptionalNotice(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200"
             />
+            <p className="text-[11px] text-gray-500 mt-1">
+              Affiché avec les horaires sur l&apos;accueil et la page contact. Laisser vide pour ne rien afficher.
+            </p>
           </div>
         </div>
 
